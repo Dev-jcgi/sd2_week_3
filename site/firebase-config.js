@@ -1,21 +1,13 @@
 /*
- * Pega aquí la configuración web de tu proyecto de Firebase
- * (Consola de Firebase → Configuración del proyecto → Tus apps → SDK de Firebase, "Config").
- * Estos valores no son secretos: identifican el proyecto. La seguridad la dan firestore.rules.
- *
- * Si lo dejas en null, la web funciona en "modo local": las pestañas del mismo navegador
- * se sincronizan entre sí, útil para probar la consola del docente y un jugador a la vez.
- *
- * El workflow de GitHub Actions reescribe este archivo si defines el secreto FIREBASE_CONFIG.
+ * Configuración web del proyecto de Firebase (sd2w3-80bb9).
+ * Estos valores no son secretos: identifican el proyecto. La seguridad la dan las reglas de firestore.rules.
+ * Si se deja en null, la web funciona en "modo local" (solo pestañas del mismo navegador).
  */
-window.FIREBASE_CONFIG = null;
-/* Ejemplo:
 window.FIREBASE_CONFIG = {
-  apiKey: "AIza...",
-  authDomain: "ds2-semana3.firebaseapp.com",
-  projectId: "ds2-semana3",
-  storageBucket: "ds2-semana3.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:0000000000000000"
+  apiKey: "AIzaSyDOAwt__NLK6oIq2yACV8A8voDF7BZgidU",
+  authDomain: "sd2w3-80bb9.firebaseapp.com",
+  projectId: "sd2w3-80bb9",
+  storageBucket: "sd2w3-80bb9.firebasestorage.app",
+  messagingSenderId: "1006382394847",
+  appId: "1:1006382394847:web:835ae0a3f904134ef6286a"
 };
-*/
