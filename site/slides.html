@@ -1,0 +1,1810 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Procesamiento del Backlog · Semana 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700;8..60,800&family=Lato:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: lienzo fijo 1280×720 escalado al viewport; diapositivas blancas tipo proyector, dinámicas en crema. */
+:root{
+  --stage:#141B2B; --paper:#FFFFFF; --cream:#FFFBEA;
+  --ink:#13213F; --body:#2B3445; --muted:#667085; --line:#D7DDE7;
+  --blue:#2F6FE4; --blue-bg:#E8F0FE; --blue-bd:#9BBCF5;
+  --teal:#0F766E; --teal-bg:#D5F5EF; --teal-bd:#7DD3C3;
+  --amber:#B45309; --amber-bg:#FEF3C7; --amber-bd:#F2C94C;
+  --red:#C2410C; --red-bg:#FDE4DC; --red-bd:#F4A38A;
+  --violet:#6D3FD6; --violet-bg:#F1E9FF; --violet-bd:#C4A5F6;
+  --green:#15803D; --green-bg:#DCFCE7; --green-bd:#86EFAC;
+  --navy:#12285A; --brown:#7A2E0E; --chip:#F7D66B;
+  --f-display:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-body:"Lato", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--stage);color:var(--body);font-family:var(--f-body);overflow:hidden}
+#deck{position:fixed;inset:0;display:grid;place-items:center}
+#canvas{position:relative;width:1280px;height:720px;transform-origin:center center;flex:none}
+.slide{position:absolute;inset:0;background:var(--paper);padding:48px 72px 70px;display:none;overflow:hidden;border-radius:4px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.slide.active{display:block}
+.slide.dyn{background:var(--cream);color:var(--brown)}
+.slide.divider{background:var(--navy);color:#fff;padding:0}
+.slide.cover{background:var(--navy);color:#fff}
+.notes{display:none}
+
+/* Tipografía */
+.eyebrow{font:900 15px/1 var(--f-body);letter-spacing:.24em;text-transform:uppercase;color:var(--blue);margin:0 0 14px}
+.dyn .eyebrow{color:var(--amber)}
+h1,h2,h3{font-family:var(--f-display);color:var(--ink);margin:0;text-wrap:balance}
+h2{font-size:46px;line-height:1.08;font-weight:800;letter-spacing:-.01em}
+.dyn h2{color:var(--brown)}
+h3{font-size:24px;font-weight:700}
+p{margin:0;font-size:20px;line-height:1.45}
+.lead{font-size:22px;color:var(--body);margin-top:12px;max-width:62ch}
+.dyn .lead{color:var(--brown);font-weight:700}
+.mono{font-family:var(--f-mono)}
+.small{font-size:16px}
+.muted{color:var(--muted)}
+code,.code{font-family:var(--f-mono);font-size:.88em;background:#EEF2F8;color:#1E3A8A;padding:1px 6px;border-radius:4px}
+.foot{position:absolute;left:72px;right:72px;bottom:24px;display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
+.dyn .foot{color:var(--amber)}
+.divider .foot,.cover .foot{color:#9FB0D6}
+.foot .play{font-weight:700;color:var(--amber)}
+.foot .play span{font-weight:400}
+
+/* Bloques */
+.row{display:flex;gap:24px}
+.col{display:flex;flex-direction:column;gap:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.side{display:grid;grid-template-columns:1fr 340px;gap:32px;margin-top:26px;align-items:start}
+.mt{margin-top:24px}.mt2{margin-top:36px}.mt1{margin-top:12px}
+.card{background:#fff;border:2px solid var(--line);border-radius:10px;padding:14px 18px}
+.card h4{margin:0 0 6px;font:900 19px/1.2 var(--f-body)}
+.card p{font-size:16px;line-height:1.4}
+.tag{border-left:8px solid var(--c,var(--blue));border-radius:8px}
+.tag h4{color:var(--c,var(--blue))}
+.bluec{--c:var(--blue)}.tealc{--c:var(--teal)}.amberc{--c:var(--amber)}.redc{--c:var(--red)}.violetc{--c:var(--violet)}.greenc{--c:var(--green)}
+.outline{border-color:var(--c,var(--blue))}
+.outline h4{color:var(--c,var(--blue))}
+.callout{background:var(--navy);color:#fff;border-radius:12px;padding:18px 24px;display:flex;gap:16px;align-items:center;font-size:19px;line-height:1.4}
+.callout b{color:#8DB4FF}
+.bulb{width:30px;height:30px;flex:none}
+.dyn .callout{position:absolute;left:72px;right:72px;bottom:58px}
+
+/* Cajas de diagrama */
+.box{position:absolute;border:2.5px solid var(--bd);background:var(--bg);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-weight:900;color:var(--ink);font-size:20px}
+.box small{font:500 15px var(--f-mono);color:var(--muted);margin-top:4px}
+.b-blue{--bg:var(--blue-bg);--bd:var(--blue-bd)}.b-teal{--bg:var(--teal-bg);--bd:var(--teal-bd)}.b-amber{--bg:var(--amber-bg);--bd:var(--amber-bd)}.b-red{--bg:var(--red-bg);--bd:var(--red-bd)}.b-violet{--bg:var(--violet-bg);--bd:var(--violet-bd)}.b-green{--bg:var(--green-bg);--bd:var(--green-bd)}
+.badge{position:absolute;top:-16px;right:-14px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;font:900 17px var(--f-body);background:var(--bc,var(--blue));box-shadow:0 2px 0 rgba(0,0,0,.15)}
+.dashed{border-style:dashed}
+
+/* Tablas */
+table.t{border-collapse:collapse;width:100%;font-size:16px}
+.t th{font:900 13px var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:2px solid var(--line)}
+.t td{padding:9px 10px;border-bottom:1px solid #E8ECF2;vertical-align:top;line-height:1.35}
+.t td.num,.t th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f-mono)}
+.t tr.hl td{background:#FFF8DB}
+.ok{color:var(--green);font-weight:900}.bad{color:var(--red);font-weight:900}.warn{color:var(--amber);font-weight:900}
+
+/* Fragmentos */
+[data-step]{transition:opacity .35s ease, transform .35s ease}
+[data-step]:not(.on){opacity:0;transform:translateY(10px);pointer-events:none}
+
+/* Portadas y divisores */
+.cover h1{color:#fff;font-size:86px;line-height:1;font-weight:800;letter-spacing:-.02em}
+.cover .eyebrow{color:#8DB4FF}
+.cover .sub{font:500 26px var(--f-mono);color:var(--chip);margin-top:20px}
+.cover p{color:#C9D5F0}
+.stack{position:absolute;right:70px;top:120px;width:360px;height:470px}
+.pbi{position:absolute;left:0;right:0;height:62px;border-radius:10px;background:#1E3B7A;border:2px solid #3B5EA8;color:#E6EDFF;display:flex;align-items:center;gap:12px;padding:0 16px;font:600 16px var(--f-mono)}
+.pbi i{font-style:normal;margin-left:auto;background:#2F6FE4;color:#fff;border-radius:6px;padding:2px 8px;font-size:14px}
+.divider .num{position:absolute;left:72px;top:120px;font:800 300px/1 var(--f-display);color:#1F3D7E}
+.divider .dtitle{position:absolute;left:72px;bottom:150px;right:72px}
+.divider h2{color:#fff;font-size:72px}
+.divider .eyebrow{color:#8DB4FF}
+.divider .dtitle p{color:#C9D5F0;font-size:22px;margin-top:16px;max-width:60ch}
+.divider .sess{position:absolute;right:72px;top:64px;font:600 15px var(--f-mono);color:var(--chip);border:1.5px solid var(--chip);border-radius:999px;padding:6px 14px}
+
+/* Dinámicas */
+.chip{position:absolute;right:72px;top:44px;border:2.5px solid var(--chip);border-radius:12px;background:#fff;padding:10px 22px;text-align:center;color:var(--amber);min-width:220px}
+.chip b{display:block;font-size:19px}
+.chip span{font-size:15px}
+.dyn h2{max-width:820px}
+.dynbody{margin-top:22px}
+.cats{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.cats .lbl{font-weight:900;color:var(--brown);margin-right:8px}
+.pill{display:inline-flex;align-items:center;justify-content:center;border-radius:8px;padding:7px 16px;font-weight:900;color:#fff;font-size:15px;min-width:64px;text-align:center}
+.pc0{background:#1F4FD8}.pc1{background:#0F766E}.pc2{background:#7C3AED}.pc3{background:#B45309}.pc4{background:#BE123C}.pc5{background:#0E7490}
+.citems{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px}
+.citem{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:2px solid #F5E2A0;border-radius:10px;padding:9px 12px;font-weight:700;font-size:16px;line-height:1.3;color:var(--brown)}
+.citem .pill{flex:none}
+.qlist{display:flex;flex-direction:column;gap:9px}
+.qrow{display:flex;align-items:center;gap:14px;background:#fff;border:2px solid #F5E2A0;border-radius:10px;padding:9px 14px;font-weight:700;font-size:17px;color:var(--brown)}
+.qrow .q{flex:1;min-width:0}
+.qrow .ans{flex:none;max-width:44%;text-align:right;background:#0F766E;color:#fff;border-radius:8px;padding:5px 12px;font-size:15px}
+.qrow .ans.poll{background:#7C3AED}
+.opts{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.opts span{border:1.5px solid #E9C46A;border-radius:6px;padding:3px 10px;font-size:14px;font-weight:700;background:#FFFDF3}
+.olist{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px}
+.oitem{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid #F5E2A0;border-radius:10px;padding:10px 14px;font-weight:700;font-size:16px;color:var(--brown)}
+.oitem .n{width:30px;height:30px;border-radius:50%;background:#B45309;color:#fff;display:grid;place-items:center;flex:none;font-size:15px}
+.pokerbox{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.hu{background:#fff;border:2px solid #F5E2A0;border-radius:12px;padding:16px 18px;font-weight:700;font-size:18px;line-height:1.4;color:var(--brown)}
+.fib{display:flex;gap:10px;margin-top:18px}
+.fib span{width:58px;height:82px;border-radius:9px;background:#fff;border:2.5px solid #1F4FD8;color:#1F4FD8;display:grid;place-items:center;font:800 26px var(--f-display);box-shadow:0 3px 0 #C9D6F7}
+.join{position:absolute;right:72px;top:150px;width:240px;background:#fff;border:2px dashed var(--chip);border-radius:12px;padding:14px;text-align:center;color:var(--brown);font-size:14px}
+.join .qr{width:150px;height:150px;margin:6px auto;display:grid;place-items:center}
+.join .qr img,.join .qr canvas{width:150px!important;height:150px!important}
+.join .url{font:600 12px var(--f-mono);word-break:break-all}
+.minichart{width:100%;height:120px}
+
+/* Gráficas */
+.chart svg{display:block;overflow:visible}
+.chart text{font-family:var(--f-body);fill:var(--muted);font-size:13px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:15px;margin-top:8px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:6px;vertical-align:-2px}
+
+/* Gantt */
+.gantt{display:grid;grid-template-columns:250px repeat(10,1fr);font-size:14px;margin-top:20px;border-top:1px solid var(--line)}
+.gantt .h{font:900 12px var(--f-body);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:8px 4px;border-bottom:2px solid var(--line);text-align:center}
+.gantt .h small{display:block;font:500 11px var(--f-mono);letter-spacing:0;text-transform:none}
+.gantt .lab{padding:6px 8px 6px 0;font-weight:700;color:var(--ink);border-bottom:1px solid #EEF1F6;font-size:14px;line-height:1.25}
+.gantt .lab small{display:block;font:500 12px var(--f-mono);color:var(--muted)}
+.gantt .track{grid-column:2 / span 10;position:relative;border-bottom:1px solid #EEF1F6;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(10% - 1px),#EEF1F6 calc(10% - 1px),#EEF1F6 10%)}
+.gantt .bar{position:absolute;top:8px;bottom:8px;border-radius:6px;color:#fff;font:700 12px var(--f-body);display:flex;align-items:center;padding:0 8px;white-space:nowrap;overflow:hidden;transform-origin:left center}
+.gantt .ms{position:absolute;top:50%;width:16px;height:16px;transform:translate(-50%,-50%) rotate(45deg);background:var(--ink)}
+.gantt .now{position:absolute;top:0;bottom:0;width:2px;background:var(--red)}
+
+/* Misceláneos */
+.ticks li{margin:6px 0}
+ul.clean{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;font-size:19px}
+ul.clean li{position:relative;padding-left:24px;line-height:1.38}
+ul.clean li::before{content:"";position:absolute;left:2px;top:.5em;width:9px;height:9px;border-radius:2px;background:var(--c,var(--blue));transform:rotate(45deg)}
+ul.clean.check li::before{content:"✓";top:0;left:0;transform:none;width:auto;height:auto;background:none;color:var(--green);font-weight:900}
+.kpi{font:800 56px/1 var(--f-display);color:var(--ink);font-variant-numeric:tabular-nums}
+.kpi small{font:700 16px var(--f-body);color:var(--muted);display:block;margin-top:6px}
+.formula{font:500 22px/1.5 var(--f-mono);color:var(--ink);background:#F4F7FC;border:1.5px solid var(--line);border-radius:10px;padding:14px 18px}
+.formula b{color:var(--blue)}
+.flow{display:flex;align-items:stretch;gap:0}
+.flow .st{flex:1;position:relative;background:var(--bg);border:2.5px solid var(--bd);border-radius:12px;padding:14px 12px;text-align:center;font-weight:900;color:var(--ink);font-size:17px;line-height:1.25}
+.flow .st small{display:block;font:500 13px var(--f-mono);color:var(--muted);margin-top:6px}
+.flow .ar{flex:none;width:30px;display:grid;place-items:center;color:var(--muted);font-size:22px}
+.waffle{display:grid;grid-template-columns:repeat(12,1fr);gap:8px;width:560px}
+.waffle span{aspect-ratio:1;border-radius:6px;display:grid;place-items:center;color:#fff;font:700 13px var(--f-mono)}
+.letter{font:800 64px/1 var(--f-display);color:var(--c,var(--blue))}
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:22px;height:420px}
+.kcol{background:#F4F7FC;border-radius:10px;padding:10px;position:relative}
+.kcol h5{margin:0 0 10px;font:900 13px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kcard{background:#fff;border:1.5px solid var(--line);border-left:6px solid var(--c,var(--blue));border-radius:8px;padding:8px 10px;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.3}
+.kcard small{display:block;font:500 11px var(--f-mono);color:var(--muted);margin-top:4px}
+.calc{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.calc label{font-weight:900;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px}
+.calc input{width:100%;font:700 26px var(--f-mono);border:2px solid var(--blue-bd);border-radius:10px;padding:8px 12px;color:var(--ink);background:#fff}
+.calc input:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+/* Controles */
+#hud{position:fixed;right:16px;bottom:14px;display:flex;gap:8px;z-index:20;opacity:0;transition:opacity .3s}
+body.mouse #hud{opacity:.85}
+#hud:hover,#hud:focus-within{opacity:1}
+#hud button{font:700 13px var(--f-body);background:#22304D;color:#E6EDFF;border:1px solid #3B4D74;border-radius:8px;padding:8px 12px;cursor:pointer}
+#hud button:focus-visible{outline:2px solid #8DB4FF}
+#progress{position:fixed;left:0;top:0;height:4px;background:#F7D66B;z-index:20;transition:width .4s}
+#notesPanel{position:fixed;left:0;right:0;bottom:0;max-height:38vh;overflow:auto;background:#0E1526;color:#DCE4F5;border-top:2px solid #F7D66B;padding:16px 24px 20px;font-size:17px;line-height:1.5;z-index:30;display:none}
+#notesPanel.on{display:block}
+#notesPanel h6{margin:0 0 8px;font:900 12px var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:#F7D66B}
+#menu{position:fixed;inset:0;background:rgba(10,15,28,.94);z-index:40;display:none;overflow:auto;padding:32px}
+#menu.on{display:block}
+#menu h3{color:#fff;font-size:22px;margin:18px 0 10px}
+#menu ol{columns:3;column-gap:28px;margin:0;padding-left:28px;color:#9FB0D6}
+#menu li{margin:4px 0;break-inside:avoid}
+#menu a{color:#E6EDFF;text-decoration:none;font-size:15px}
+#menu a:hover{color:#F7D66B}
+/* Vista del presentador */
+body.presenter #deck{right:38%}
+body.presenter #pv{display:flex}
+#pv{display:none;position:fixed;top:0;right:0;bottom:0;width:38%;background:#0E1526;color:#DCE4F5;flex-direction:column;padding:22px 24px;gap:14px;z-index:25;font-size:18px;line-height:1.5}
+#pv .clock{font:600 34px var(--f-mono);color:#F7D66B}
+#pv .next{font-size:15px;color:#9FB0D6}
+#pv .pnotes{overflow:auto;flex:1;border-top:1px solid #2A3A5E;padding-top:12px;white-space:pre-line}
+.dyn.compact h2{font-size:38px}.dyn.compact .lead{font-size:17px;margin-top:6px}.dyn.compact .dynbody{margin-top:12px}
+.dyn.compact .olist{grid-template-columns:repeat(3,1fr);gap:8px}.dyn.compact .oitem{padding:6px 10px;font-size:14px}.dyn.compact .oitem .n{width:24px;height:24px;font-size:13px}
+.dyn.compact .citems{gap:7px 14px}.dyn.compact .citem{padding:5px 10px;font-size:14px}.dyn.compact .cats{margin:12px 0 8px}.dyn.compact .pill{padding:5px 12px}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div id="deck"><div id="canvas">
+
+<!-- ===================== SESIÓN 1 ===================== -->
+
+<section class="slide cover" data-title="Portada · Sesión 1">
+  <p class="eyebrow">Desarrollo de Software 2 · Semana 3 · Sesión 1 de 2</p>
+  <h1 class="anim" style="margin-top:110px">Procesamiento<br>del Backlog</h1>
+  <p class="sub anim">«Primero lo que desbloquea a otros.»</p>
+  <p class="anim" style="margin-top:26px;font-size:21px;max-width:560px">Del requerimiento al Sprint: checkpoint del capstone, Product Backlog, refinamiento y estimación, con el Delivery System como caso real.</p>
+  <div class="stack" aria-hidden="true">
+    <div class="pbi" style="top:0">RF-1.13 · rol MERCHANT <i>5</i></div>
+    <div class="pbi" style="top:76px">RF-1.19 · UserService <i>5</i></div>
+    <div class="pbi" style="top:152px">RF-1.23 · usuarios de prueba <i>1</i></div>
+    <div class="pbi" style="top:228px">RF-1.02 · inicio de sesión <i>8</i></div>
+    <div class="pbi" style="top:304px;opacity:.75">RF-1.11 · activar / inactivar <i>3</i></div>
+    <div class="pbi" style="top:380px;opacity:.5">RF-1.17 · bloqueo por intentos <i>?</i></div>
+  </div>
+  <aside class="notes">⏱ 2 min. Bienvenida. Esta semana se divide en dos sesiones de hora y media. Hoy: checkpoint del capstone, el Product Backlog y su refinamiento, con estimación. La sesión 2: Sprint Planning con SMART y la Definición de Terminado, y seguimiento del progreso.
+La pila de la derecha es el Product Backlog real de users-module que vamos a construir durante la clase. Fíjense que arriba está detallado y abajo hay un "?": eso es exactamente lo que vamos a explicar.</aside>
+</section>
+
+<section class="slide" data-title="Ruta de la semana">
+  <p class="eyebrow">Agenda · Semana 3</p>
+  <h2>Cinco paradas en dos sesiones</h2>
+  <div class="flow mt2" style="gap:0">
+    <div class="st b-blue anim">01<br>Capstone Checkpoint<small>SDLC · casos de uso · tallas · Gantt</small></div><div class="ar">→</div>
+    <div class="st b-blue anim">02<br>El Backlog<small>Product Backlog · jerarquía · orden</small></div><div class="ar">→</div>
+    <div class="st b-blue anim">03<br>Refinamiento<small>DoR · INVEST · estimaciones</small></div><div class="ar">→</div>
+    <div class="st b-amber anim">04<br>Sprint Planning<small>SMART · DoD</small></div><div class="ar">→</div>
+    <div class="st b-amber anim">05<br>Seguimiento<small>tablero · burndown · burnup</small></div>
+  </div>
+  <div class="grid2 mt2">
+    <div class="card tag bluec anim"><h4>Sesión 1 · hoy · 90 min</h4><p>Paradas 1 a 3. Salimos con el backlog de cada módulo ordenado y el Sprint 1 estimado.</p></div>
+    <div class="card tag amberc anim"><h4>Sesión 2 · 90 min</h4><p>Paradas 4 y 5. Salimos con el Sprint Goal, la DoD común de los cuatro equipos y el tablero listo para medir.</p></div>
+  </div>
+  <div class="callout mt2 anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>Cada parada abre y cierra con una <b>dinámica</b> que se juega desde el celular. Los puntos se suman al ranking individual y al ranking por equipo.</span></div>
+  <aside class="notes">⏱ 2 min. Presenta el recorrido. Las paradas azules son de hoy y las ámbar de la próxima sesión. Recalca el entregable de cada sesión: hoy, backlog ordenado y Sprint 1 estimado en GitLab; la próxima, Sprint Goal y DoD acordada entre los cuatro equipos.</aside>
+</section>
+
+<section class="slide" data-title="Cómo se juega">
+  <p class="eyebrow">Antes de empezar</p>
+  <h2>Así se juegan las dinámicas</h2>
+  <div class="side">
+    <div class="col">
+      <div class="flow">
+        <div class="st b-blue anim">1. Abre la web<small>desde tu celular</small></div><div class="ar">→</div>
+        <div class="st b-blue anim">2. Escribe el código<small>de 5 letras del proyector</small></div><div class="ar">→</div>
+        <div class="st b-blue anim">3. Elige tu equipo<small>A · B · C · D</small></div>
+      </div>
+      <table class="t mt anim">
+        <tr><th>Tipo</th><th>Qué haces</th><th class="num">Puntos</th></tr>
+        <tr><td><b>Quiz / V-F</b></td><td>Eliges una opción antes de que acabe el tiempo</td><td class="num">500 + bono por rapidez</td></tr>
+        <tr><td><b>Clasificar</b></td><td>Asignas una categoría a cada tarjeta</td><td class="num">hasta 1000</td></tr>
+        <tr><td><b>Ordenar</b></td><td>Subes y bajas tarjetas hasta el orden correcto</td><td class="num">hasta 1000</td></tr>
+        <tr><td><b>Encuesta · Poker</b></td><td>Opinas o votas; no hay respuesta correcta</td><td class="num">100 por participar</td></tr>
+      </table>
+    </div>
+    <div class="join anim" style="position:static;width:auto">
+      <b>Entra aquí</b>
+      <div class="qr" data-qr></div>
+      <div class="url" data-appurl></div>
+      <p class="small" style="margin-top:8px">El ranking por equipo usa el <b>promedio</b> por integrante: un equipo de 3 compite igual que uno de 4.</p>
+    </div>
+  </div>
+  <aside class="notes">⏱ 2 min. Abre en tu computadora la web, entra a "Docente", crea la sala y proyéctala. Pide que todos entren ahora con el código para no perder tiempo en la primera dinámica.
+El ranking por equipo usa promedio porque el Equipo C tiene 3 integrantes y el D tiene 3 efectivos.</aside>
+</section>
+
+<!-- ---------- SECCIÓN 1 ---------- -->
+<section class="slide divider" data-title="01 · Capstone Checkpoint" data-section="1">
+  <span class="sess">Sesión 1</span>
+  <div class="num anim">01</div>
+  <div class="dtitle"><p class="eyebrow">Sección 1</p><h2 class="anim">Capstone Checkpoint</h2><p class="anim">Análisis de requerimientos en el SDLC, casos de uso, estimación de alto nivel y plan de acción con Gantt, usando users-module como ejemplo guiado.</p></div>
+  <aside class="notes">⏱ 25 min para toda la sección. Vamos a revisar dónde estamos y a modelar con users-module el entregable que cada equipo debe producir en su carpeta requirements/.</aside>
+</section>
+
+<section class="slide dyn" data-activity="a1" data-title="Dinámica · ¿En qué punto está tu equipo?"></section>
+
+<section class="slide" data-title="Dónde estamos">
+  <p class="eyebrow">Capstone · Delivery System</p>
+  <h2>Semana 3 de 10: termina la preparación, empieza el Sprint 1</h2>
+  <div class="chart mt2 anim" data-chart="timeline" style="height:250px"></div>
+  <div class="grid3 mt">
+    <div class="card tag bluec anim"><h4>v0.1.0 · semana 2</h4><p>Línea base: core-module y user-module de referencia. Cada equipo clona y compila.</p></div>
+    <div class="card tag amberc anim"><h4>v0.2.0 · v0.3.0 · v0.4.0</h4><p>Integraciones al cierre de cada Sprint de 2 semanas: semanas 4, 6 y 8.</p></div>
+    <div class="card tag greenc anim"><h4>v1.0.0 · semana 9</h4><p>Entrega final. La semana 10 es para la demo del sistema integrado.</p></div>
+  </div>
+  <aside class="notes">⏱ 2 min. La línea muestra las 10 semanas con los tags acordados en la guía de Practitioners. Estamos en la semana 3, del 12 al 16 de octubre. El Sprint 1 va de la semana 3 a la 4 y cierra con el tag v0.2.0. Por eso esta semana es crítica: si el backlog no está listo, el Sprint 1 empieza a ciegas.</aside>
+</section>
+
+<section class="slide" data-title="Análisis de requerimientos en el SDLC">
+  <p class="eyebrow">Fundamentos · SDLC</p>
+  <h2>El análisis de requerimientos dentro del ciclo de vida</h2>
+  <div class="side" style="grid-template-columns:520px 1fr">
+    <svg viewBox="0 0 520 470" width="520" height="470" aria-label="Ciclo de vida del software">
+      <circle cx="260" cy="235" r="168" fill="none" stroke="#D7DDE7" stroke-width="3" class="draw"/>
+      <g font-family="Lato" font-weight="900" text-anchor="middle">
+        <g class="anim"><circle cx="260" cy="67" r="58" fill="#E8F0FE" stroke="#9BBCF5" stroke-width="3"/><text x="260" y="62" font-size="16" fill="#13213F">Planeación</text><text x="260" y="82" font-size="12" fill="#667085">Objetivo del Producto</text></g>
+        <g class="anim"><circle cx="405" cy="151" r="66" fill="#FEF3C7" stroke="#B45309" stroke-width="4"/><text x="405" y="143" font-size="16" fill="#7A2E0E">Análisis de</text><text x="405" y="162" font-size="16" fill="#7A2E0E">requerimientos</text><text x="405" y="182" font-size="12" fill="#B45309">esta semana</text></g>
+        <g class="anim"><circle cx="405" cy="319" r="58" fill="#F1E9FF" stroke="#C4A5F6" stroke-width="3"/><text x="405" y="315" font-size="16" fill="#13213F">Diseño</text><text x="405" y="334" font-size="12" fill="#667085">puertos y adaptadores</text></g>
+        <g class="anim"><circle cx="260" cy="403" r="58" fill="#D5F5EF" stroke="#7DD3C3" stroke-width="3"/><text x="260" y="398" font-size="16" fill="#13213F">Implementación</text><text x="260" y="418" font-size="12" fill="#667085">1 issue = 1 rama = 1 MR</text></g>
+        <g class="anim"><circle cx="115" cy="319" r="58" fill="#DCFCE7" stroke="#86EFAC" stroke-width="3"/><text x="115" y="315" font-size="16" fill="#13213F">Pruebas</text><text x="115" y="334" font-size="12" fill="#667085">memoria · H2 · FXML</text></g>
+        <g class="anim"><circle cx="115" cy="151" r="58" fill="#FDE4DC" stroke="#F4A38A" stroke-width="3"/><text x="115" y="146" font-size="16" fill="#13213F">Despliegue</text><text x="115" y="166" font-size="12" fill="#667085">tags · CI</text></g>
+      </g>
+      <text x="260" y="230" text-anchor="middle" font-family="Source Serif 4" font-weight="800" font-size="26" fill="#13213F">En Scrum</text>
+      <text x="260" y="256" text-anchor="middle" font-family="Lato" font-size="15" fill="#667085">el ciclo se repite cada Sprint</text>
+    </svg>
+    <div class="col">
+      <div class="card tag amberc anim"><h4>Qué hace el análisis</h4><p>Convierte la épica en piezas verificables: separa FUN, INT y RNF, identifica actores, reglas de negocio y dependencias con otros módulos.</p></div>
+      <div class="card tag bluec anim"><h4>Qué produce</h4><p>Historias de usuario con criterios de aceptación, casos de uso trazados 1:1 con cada FUN y preguntas abiertas para el Product Owner.</p></div>
+      <div class="card tag violetc anim"><h4>En ágil no es una fase única</h4><p>Se analiza "lo suficiente" para los próximos Sprints. El resto del backlog se refina después, cuando se sabe más.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. En el modelo en cascada el análisis ocurre una vez al principio. En Scrum el ciclo completo se recorre en cada Sprint y el análisis se vuelve continuo: eso es el refinamiento del backlog que veremos en la sección 3.
+Pregunta al grupo: ¿qué tipo de requerimiento es INT-003 de pedidos? Respuesta: de integración, porque depende de UserService.</aside>
+</section>
+
+<section class="slide" data-title="Mapa del sistema">
+  <p class="eyebrow">Capstone · Delivery System</p>
+  <h2>¿Quién depende de quién?</h2>
+  <div style="position:relative;height:500px;margin-top:6px">
+    <svg width="830" height="500" style="position:absolute;left:0;top:0" aria-hidden="true">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2F6FE4"/></marker>
+      <marker id="ahv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#6D3FD6"/></marker></defs>
+      <g stroke="#2F6FE4" stroke-width="2.5" fill="none" marker-end="url(#ah)" class="draw">
+        <path d="M190 134 L326 203"/><path d="M640 134 L504 203"/><path d="M190 358 L326 307"/><path d="M640 358 L504 307"/>
+      </g>
+      <g stroke="#6D3FD6" stroke-width="2.5" fill="none" stroke-dasharray="8 6" marker-end="url(#ahv)" class="draw">
+        <path d="M543 86 L284 86"/><path d="M700 358 L700 136"/><path d="M560 134 Q 230 150 168 354"/>
+      </g>
+      <g font-family="IBM Plex Mono" font-size="13" fill="#667085">
+        <text x="232" y="196">UserService</text><text x="520" y="196">UserService</text><text x="150" y="318">UserService</text><text x="570" y="318">UserService</text>
+        <text x="350" y="76" fill="#6D3FD6">CatalogService</text><text x="710" y="250" fill="#6D3FD6">OrderService</text><text x="352" y="134" fill="#6D3FD6">PaymentService</text>
+      </g>
+    </svg>
+    <div class="box b-teal anim" style="left:30px;top:40px;width:250px;height:92px">catalog-module<small>comercios · productos</small><span class="badge" style="--bc:var(--teal)">C</span></div>
+    <div class="box b-amber anim" style="left:545px;top:40px;width:250px;height:92px">order-module<small>carrito · pedidos</small><span class="badge" style="--bc:var(--amber)">B</span></div>
+    <div class="box b-violet anim" style="left:30px;top:360px;width:250px;height:92px">payment-module<small>pagos · promociones</small><span class="badge" style="--bc:var(--violet)">D</span></div>
+    <div class="box b-red anim" style="left:545px;top:360px;width:250px;height:92px">delivery-module<small>repartidores · entregas</small><span class="badge" style="--bc:var(--red)">A</span></div>
+    <div class="box b-blue anim" style="left:300px;top:205px;width:230px;height:100px;border-width:3.5px">user-module<small>referencia del docente</small></div>
+    <div class="col" style="position:absolute;right:0;top:0;width:300px;gap:12px">
+      <div class="card tag bluec anim"><h4>Identidad</h4><p>Todos validan identidad y rol con <code>UserService</code>. Nadie lee la tabla de usuarios.</p></div>
+      <div class="card tag violetc anim"><h4>Negocio</h4><p>Pedidos consume catálogo y pagos; entregas consume pedidos.</p></div>
+      <div class="card tag amberc anim"><h4>En proceso</h4><p>La integración es por interfaces Java, no por red. Mientras tanto: mocks.</p></div>
+      <div class="card tag greenc anim"><h4>Una base por módulo</h4><p>Migraciones Flyway en <code>db/migration/&lt;module&gt;/</code>.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. Las flechas azules son la dependencia de identidad: los cuatro módulos consumen UserService (INT-002 de catálogo, INT-003 de pedidos, INT-002 de entregas e INT-002 de pagos). Las flechas punteadas moradas son contratos de negocio: pedidos consume CatalogService y PaymentService, y entregas consume OrderService.
+Conclusión: user-module está en el centro del grafo. Si su backlog no prioriza UserService, tres equipos se frenan.</aside>
+</section>
+
+<section class="slide" data-title="Reglas del proyecto">
+  <p class="eyebrow">Capstone · reglas acordadas</p>
+  <h2>Seis reglas que condicionan el backlog</h2>
+  <div class="grid3 mt2">
+    <div class="card outline bluec anim"><h4>1 · Cuatro épicas</h4><p>Una por módulo de negocio. core-module no tiene épica; user-module es la referencia.</p></div>
+    <div class="card outline bluec anim"><h4>2 · requirements/</h4><p>Cada módulo guarda su desglose en <code>&lt;module&gt;/requirements/</code>.</p></div>
+    <div class="card outline bluec anim"><h4>3 · 1 FUN = 1 caso de uso</h4><p>FUN-001 de catálogo produce <code>CreateCommerceUseCase</code>, y así cada uno.</p></div>
+    <div class="card outline tealc anim"><h4>4 · Base por módulo</h4><p>Ningún módulo lee ni escribe tablas de otro.</p></div>
+    <div class="card outline tealc anim"><h4>5 · Integración por código</h4><p>Interfaces Java que exponen DTOs, nunca entidades ni repositorios.</p></div>
+    <div class="card outline tealc anim"><h4>6 · Mockear</h4><p>Cada equipo crea implementaciones falsas de los servicios que todavía no existen.</p></div>
+  </div>
+  <div class="callout mt2 anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>Las reglas 3 y 6 generan trabajo que <b>sí va al backlog</b>: un caso de uso por FUN y un mock por cada servicio externo que consumes.</span></div>
+  <aside class="notes">⏱ 2 min. Repaso rápido de las reglas de la semana 2. El punto nuevo: las reglas producen elementos del backlog. Si el equipo B no tiene un issue "Mock de CatalogService", ese trabajo es invisible y no se estima.</aside>
+</section>
+
+<section class="slide" data-title="users-module en cifras">
+  <p class="eyebrow">Ejemplo guiado · users-module</p>
+  <h2>Cuatro épicas, 23 requerimientos funcionales</h2>
+  <div class="grid2 mt" style="grid-template-columns:1.25fr 1fr">
+    <table class="t anim">
+      <tr><th>Épica</th><th>Requerimientos</th><th class="num">FUN</th><th class="num">Opc.</th></tr>
+      <tr><td><b>1 · Registro y autenticación</b></td><td>RF-1.01 a RF-1.06</td><td class="num">6</td><td class="num">1</td></tr>
+      <tr><td><b>2 · Gestión y administración</b></td><td>RF-1.07 a RF-1.12</td><td class="num">6</td><td class="num">1</td></tr>
+      <tr><td><b>3 · Roles, permisos y seguridad</b></td><td>RF-1.13 a RF-1.18</td><td class="num">6</td><td class="num">3</td></tr>
+      <tr><td><b>4 · Contrato UserService</b></td><td>RF-1.19 a RF-1.23</td><td class="num">5</td><td class="num">1</td></tr>
+      <tr class="hl"><td><b>Total</b></td><td></td><td class="num">23</td><td class="num">6</td></tr>
+    </table>
+    <div class="col">
+      <div class="row">
+        <div class="anim"><div class="kpi" data-count="17">17</div><small class="muted">obligatorios</small></div>
+        <div class="anim"><div class="kpi" data-count="6">6</div><small class="muted">opcionales · puntos extra</small></div>
+        <div class="anim"><div class="kpi" data-count="9">9</div><small class="muted">RNF</small></div>
+      </div>
+      <div class="card tag redc anim"><h4>RNF-1.07</h4><p>La autenticación mínima debe poder usarse desde las primeras dos semanas: todos dependen de Usuarios.</p></div>
+      <div class="card tag bluec anim"><h4>Decisión de alcance</h4><p>Usuarios guarda solo identidad y rol base. El perfil de negocio (catálogo, vehículo) vive en cada módulo.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 2 min. Los números salen del documento de requerimientos del módulo de Usuarios. Los opcionales son RF-1.05, 1.12, 1.16, 1.17, 1.18 y 1.22. RNF-1.07 es el que justifica poner UserService arriba del backlog.</aside>
+</section>
+
+<section class="slide" data-title="La brecha código vs requerimiento">
+  <p class="eyebrow">Ejemplo guiado · análisis</p>
+  <h2>Lo que pide el requerimiento y lo que tiene el código hoy</h2>
+  <table class="t mt">
+    <tr><th>Requerimiento</th><th>Código actual (user-module)</th><th>Resultado del análisis</th></tr>
+    <tr class="anim"><td><b>RF-1.13</b> Cuatro roles: Admin, Cliente, Comercio, Repartidor</td><td><code>UserRole</code> = CUSTOMER, COURIER, ADMIN</td><td class="bad">Falta MERCHANT → ítem del backlog</td></tr>
+    <tr class="anim"><td><b>RF-1.19</b> Punto de contacto oficial para otros módulos</td><td>No existe <code>UserService</code></td><td class="bad">Crear el contrato público → ítem</td></tr>
+    <tr class="anim"><td><b>RF-1.11</b> Nunca se elimina un usuario, solo se desactiva</td><td>Existe <code>DeleteUserUseCase</code></td><td class="warn">Contradicción → hablar con el PO</td></tr>
+    <tr class="anim"><td><b>RF-1.08</b> El correo no se puede modificar</td><td><code>UpdateUserUseCase</code>: "email cannot change"</td><td class="ok">Ya cumple</td></tr>
+    <tr class="anim"><td><b>RF-1.01</b> No dos cuentas con el mismo correo</td><td><code>CreateUserUseCase</code>: "email must not be registered yet"</td><td class="ok">Ya cumple</td></tr>
+  </table>
+  <div class="callout mt anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>Analizar no es solo leer la épica: es <b>compararla con lo que ya existe</b>. Cada diferencia es un elemento del backlog o una pregunta para el Product Owner.</span></div>
+  <aside class="notes">⏱ 3 min. Este es el ejemplo guiado que se anunció. La brecha MERCHANT y UserService es intencional. La de DeleteUser es un hallazgo de análisis: RF-1.11 dice que nunca se elimina un usuario y el código tiene un caso de uso de borrado. Eso no se resuelve programando: se lleva al Product Owner y se refina en la sección 3.
+Pide a cada equipo que haga este mismo ejercicio con su épica: ¿qué ya existe en core-module que pueden reutilizar?</aside>
+</section>
+
+<section class="slide" data-title="Trazabilidad">
+  <p class="eyebrow">Fundamentos · trazabilidad</p>
+  <h2>De la épica al Merge Request, sin perder el hilo</h2>
+  <div class="flow mt2">
+    <div class="st b-blue anim">Épica<small>EPIC-USR-01</small></div><div class="ar">→</div>
+    <div class="st b-blue anim">Requerimiento<small>RF-1.01</small></div><div class="ar">→</div>
+    <div class="st b-amber anim">Historia<small>HU-01</small></div><div class="ar">→</div>
+    <div class="st b-violet anim">Caso de uso<small>CU-01</small></div><div class="ar">→</div>
+    <div class="st b-teal anim">Clase<small>CreateUserUseCase</small></div><div class="ar">→</div>
+    <div class="st b-green anim">Issue · rama · MR<small>#12 · feat/hu-01</small></div>
+  </div>
+  <table class="t mt2 anim">
+    <tr><th>ID Épica</th><th>FUN / INT</th><th>Historia de Usuario</th><th>Caso de Uso</th><th>Estado</th></tr>
+    <tr><td>EPIC-USR-01</td><td>RF-1.01</td><td>HU-01 Registrar cuenta</td><td>CU-01 <code>CreateUserUseCase</code></td><td class="ok">Hecho</td></tr>
+    <tr><td>EPIC-USR-03</td><td>RF-1.13</td><td>HU-13 Rol MERCHANT</td><td>CU-13 <code>CreateUserUseCase</code> (extiende)</td><td class="warn">Backlog</td></tr>
+    <tr><td>EPIC-USR-04</td><td>RF-1.20 · INT</td><td>HU-20 Validar usuario</td><td>CU-20 <code>ValidateUserUseCase</code></td><td class="warn">Backlog</td></tr>
+    <tr><td>EPIC-USR-02</td><td>RF-1.11</td><td>HU-11 Inactivar cuenta</td><td>CU-11 <code>DeactivateUserUseCase</code></td><td class="warn">Backlog</td></tr>
+  </table>
+  <aside class="notes">⏱ 2 min. Esta tabla es la sección 1.2 de la plantilla que cada equipo llena en requirements/plan-modulo.md. La pregunta de control: ¿todos los FUN tienen su caso de uso? Si falta una fila, falta trabajo en el backlog.</aside>
+</section>
+
+<section class="slide" data-title="Caso de uso CU-01">
+  <p class="eyebrow">Casos de uso · especificación</p>
+  <h2>CU-01 · Registrar cuenta</h2>
+  <div class="grid2 mt" style="grid-template-columns:1fr 1fr">
+    <table class="t anim">
+      <tr><td><b>Requerimiento</b></td><td>RF-1.01 (+ RF-1.06 validación)</td></tr>
+      <tr><td><b>Historia</b></td><td>Como cliente, comercio o repartidor, quiero crear mi cuenta con nombre, correo, teléfono, contraseña y rol, para usar la plataforma.</td></tr>
+      <tr><td><b>Actor</b></td><td>Visitante · secundario: Administrador (RF-1.10)</td></tr>
+      <tr><td><b>Precondición</b></td><td>El correo no está registrado</td></tr>
+      <tr><td><b>Postcondición</b></td><td>Cuenta en estado Activa con su rol</td></tr>
+      <tr><td><b>Clase</b></td><td><code>CreateUserUseCase</code> · <code>UseCase&lt;CreateUserCommand, UUID&gt;</code></td></tr>
+    </table>
+    <div class="col">
+      <div class="card anim"><h4>Flujo principal</h4><p>1. El visitante llena el formulario.<br>2. El sistema valida correo, teléfono y longitud de contraseña.<br>3. Verifica que el correo no exista (<code>existsByEmail</code>).<br>4. Guarda el usuario y devuelve su <code>UUID</code>.</p></div>
+      <table class="t anim">
+        <tr><th>#</th><th>Condición</th><th>Comportamiento</th></tr>
+        <tr><td>A1</td><td>Formato inválido</td><td>Lanza <code>DomainException</code>, no persiste</td></tr>
+        <tr><td>A2</td><td>Correo existente</td><td>Lanza <code>ConflictException</code></td></tr>
+        <tr><td>A3</td><td>Rol ADMIN pedido por un visitante</td><td>Se rechaza: solo un admin lo crea</td></tr>
+      </table>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. Esta es la sección 3 de la plantilla, llenada con users-module. Nota que la regla "el correo no debe existir" ya vive en CreateUserUseCase según el README. El flujo alterno A3 es una regla de negocio que aparece al analizar: RF-1.01 lista los roles que un visitante elige, y ADMIN no está entre ellos.</aside>
+</section>
+
+<section class="slide" data-title="Diagrama de casos de uso">
+  <p class="eyebrow">Casos de uso · diagrama</p>
+  <h2>users-module: actores y casos de uso</h2>
+  <svg viewBox="0 0 1136 520" width="1136" height="520" style="margin-top:8px" aria-label="Diagrama de casos de uso">
+    <rect x="270" y="10" width="600" height="500" rx="16" fill="#F8FAFD" stroke="#9BBCF5" stroke-width="2.5"/>
+    <text x="570" y="40" text-anchor="middle" font-family="Lato" font-weight="900" font-size="16" fill="#2F6FE4">user-module</text>
+    <g font-family="Lato" font-size="15" font-weight="700" fill="#13213F" text-anchor="middle">
+      <g class="anim"><ellipse cx="430" cy="90" rx="135" ry="30" fill="#fff" stroke="#13213F" stroke-width="1.8"/><text x="430" y="95">CU-01 Registrar cuenta</text></g>
+      <g class="anim"><ellipse cx="430" cy="165" rx="135" ry="30" fill="#fff" stroke="#13213F" stroke-width="1.8"/><text x="430" y="170">CU-02 Iniciar sesión</text></g>
+      <g class="anim"><ellipse cx="430" cy="240" rx="135" ry="30" fill="#fff" stroke="#13213F" stroke-width="1.8"/><text x="430" y="245">CU-07 Ver mi perfil</text></g>
+      <g class="anim"><ellipse cx="430" cy="315" rx="135" ry="30" fill="#fff" stroke="#13213F" stroke-width="1.8"/><text x="430" y="320">CU-08 Editar mi perfil</text></g>
+      <g class="anim"><ellipse cx="715" cy="150" rx="135" ry="30" fill="#fff" stroke="#13213F" stroke-width="1.8"/><text x="715" y="155">CU-09 Listar y filtrar</text></g>
+      <g class="anim"><ellipse cx="715" cy="225" rx="135" ry="30" fill="#FEF3C7" stroke="#B45309" stroke-width="2"/><text x="715" y="230">CU-11 Inactivar cuenta</text></g>
+      <g class="anim"><ellipse cx="715" cy="380" rx="135" ry="30" fill="#E8F0FE" stroke="#2F6FE4" stroke-width="2"/><text x="715" y="385">CU-20 Validar usuario</text></g>
+      <g class="anim"><ellipse cx="430" cy="440" rx="135" ry="30" fill="#fff" stroke="#13213F" stroke-width="1.8"/><text x="430" y="445">CU-06 Validar datos</text></g>
+    </g>
+    <g stroke="#13213F" stroke-width="1.6" fill="none" class="draw">
+      <path d="M120 150 L295 165"/><path d="M120 150 L295 240"/><path d="M120 150 L297 310"/>
+      <path d="M120 380 L298 100"/><path d="M1010 180 L850 152"/><path d="M1010 180 L850 225"/><path d="M1010 400 L850 382"/>
+    </g>
+    <g stroke="#667085" stroke-width="1.5" stroke-dasharray="6 5" fill="none"><path d="M430 120 C 330 250, 330 330, 405 410"/></g>
+    <text x="300" y="300" font-family="IBM Plex Mono" font-size="12" fill="#667085">«include»</text>
+    <g font-family="Lato" font-size="15" font-weight="900" fill="#13213F" text-anchor="middle" stroke="#13213F" stroke-width="2">
+      <g class="anim"><circle cx="90" cy="110" r="14" fill="#fff"/><path d="M90 124v40M66 140h48M90 164l-18 28M90 164l18 28" fill="none"/><text x="90" y="215" stroke="none">Cliente · Comercio</text><text x="90" y="233" stroke="none">· Repartidor</text></g>
+      <g class="anim"><circle cx="90" cy="345" r="14" fill="#fff"/><path d="M90 359v40M66 375h48M90 399l-18 28M90 399l18 28" fill="none"/><text x="90" y="450" stroke="none">Visitante</text></g>
+      <g class="anim"><circle cx="1040" cy="140" r="14" fill="#fff"/><path d="M1040 154v40M1016 170h48M1040 194l-18 28M1040 194l18 28" fill="none"/><text x="1040" y="245" stroke="none">Administrador</text></g>
+      <g class="anim"><rect x="975" y="370" width="135" height="64" rx="8" fill="#E8F0FE" stroke="#2F6FE4"/><text x="1042" y="398" stroke="none" font-size="13">«sistema»</text><text x="1042" y="418" stroke="none" font-size="13">otros módulos</text></g>
+    </g>
+  </svg>
+  <aside class="notes">⏱ 2 min. Versión visual de la sección 4.1 de la plantilla (PlantUML). Los otros módulos aparecen como actor de sistema porque llaman a UserService. CU-11 está en ámbar porque reemplaza el borrado. CU-01 incluye CU-06: la validación de datos se reutiliza.</aside>
+</section>
+
+<section class="slide" data-title="Estimación de alto nivel">
+  <p class="eyebrow">Estimación · alto nivel</p>
+  <h2>Tallas T-shirt: rápido, relativo y suficiente para planear</h2>
+  <div class="side" style="grid-template-columns:1fr 360px">
+    <table class="t anim">
+      <tr><th>Talla</th><th>Significado sugerido</th><th>Esfuerzo aprox.</th><th class="num">≈ SP</th></tr>
+      <tr><td><span class="pill pc0">XS</span></td><td>Cambio trivial, sin lógica nueva</td><td>&lt; 2 h</td><td class="num">1</td></tr>
+      <tr><td><span class="pill pc1">S</span></td><td>Tarea simple, una capa</td><td>2–4 h</td><td class="num">2–3</td></tr>
+      <tr><td><span class="pill pc2">M</span></td><td>Caso de uso completo con persistencia</td><td>4–8 h</td><td class="num">5</td></tr>
+      <tr><td><span class="pill pc3">L</span></td><td>Integración entre capas o módulos</td><td>1–2 días</td><td class="num">8</td></tr>
+      <tr><td><span class="pill pc4">XL</span></td><td>Debe descomponerse</td><td>&gt; 2 días</td><td class="num">13+</td></tr>
+    </table>
+    <div class="col">
+      <div class="card tag bluec anim"><h4>¿Por qué tallas?</h4><p>Al inicio no sabemos lo suficiente para dar horas. Comparar "¿es más grande que…?" es más fácil y más honesto.</p></div>
+      <div class="card tag amberc anim"><h4>Players</h4><p>Cada integrante estima solo y luego se comparan, igual que en Planning Poker. Las diferencias revelan supuestos.</p></div>
+      <div class="card tag redc anim"><h4>Regla</h4><p>Un XL no entra al Sprint: se divide en piezas M o L.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. La tabla es la referencia de tallas de la plantilla, sección 2.1. La columna de story points es una equivalencia aproximada que usaremos más adelante para pasar de tallas a puntos. "Players" significa que estiman todos los que harán el trabajo: no estima solo el líder.</aside>
+</section>
+
+<section class="slide" data-title="Tallas de users-module">
+  <p class="eyebrow">Ejemplo guiado · estimación</p>
+  <h2>Los 23 requerimientos de users-module, por talla</h2>
+  <div class="chart mt anim" data-chart="sizes" style="height:420px"></div>
+  <div class="legend anim"><span><i style="background:#1F4FD8"></i>XS · 1</span><span><i style="background:#0F766E"></i>S · 2–3</span><span><i style="background:#7C3AED"></i>M · 5</span><span><i style="background:#B45309"></i>L · 8</span><span><i style="border:2px dashed #667085;background:#fff"></i>opcional</span><span class="muted">Obligatorios: 76 SP</span></div>
+  <aside class="notes">⏱ 2 min. Cada tarjeta es un requerimiento con su talla. Los L son login, recuperación de contraseña, restricción por rol y sesión activa: todos tocan varias capas. La suma de los 17 obligatorios es 76 story points; ese número alimenta el Gantt y el ejemplo de Govil & Sharma más adelante.</aside>
+</section>
+
+<section class="slide" data-title="Plan de acción · Gantt">
+  <p class="eyebrow">Plan de acción · Roadmap</p>
+  <h2>Gantt de users-module: Sprints de 2 semanas</h2>
+  <div class="gantt anim" id="gantt"></div>
+  <div class="legend mt1"><span><i style="background:#2F6FE4"></i>Sprint 1 · 24 SP</span><span><i style="background:#0F766E"></i>Sprint 2 · 26 SP</span><span><i style="background:#7C3AED"></i>Sprint 3 · 26 SP</span><span><i style="background:#B45309"></i>Opcionales y cierre</span><span>◆ tag</span><span style="color:#C2410C">│ hoy</span></div>
+  <aside class="notes">⏱ 4 min. Así queda la sección 2.2 de la plantilla para users-module. Semana 1 empieza el 28 de septiembre. El Sprint 1 (semanas 3–4) entrega lo que desbloquea a otros: MERCHANT, UserService y usuarios de prueba. El Sprint 2 cubre la sesión y el perfil; el Sprint 3, permisos y administración. La semana 9 es para opcionales y la v1.0.0.
+Cada barra es una historia del backlog; los diamantes son los tags. Pide a cada equipo que haga su propio Gantt con su épica.</aside>
+</section>
+
+<section class="slide" data-title="Dependencias temporales">
+  <p class="eyebrow">Plan de acción · dependencias</p>
+  <h2>Qué desbloquea a quién</h2>
+  <table class="t mt">
+    <tr><th>Equipo · módulo</th><th>Necesita</th><th>Requerimiento</th><th>Mientras tanto</th><th>Real desde</th></tr>
+    <tr class="anim"><td><b>C · catalog</b></td><td><code>UserService</code> con rol MERCHANT</td><td>INT-002</td><td>Mock que acepta ADMIN y MERCHANT</td><td>Semana 4 · v0.2.0</td></tr>
+    <tr class="anim"><td><b>B · order</b></td><td><code>UserService</code>, <code>CatalogService</code>, <code>PaymentService</code></td><td>INT-001 a INT-003</td><td>Tres mocks con respuestas controladas</td><td>Semanas 4 a 6</td></tr>
+    <tr class="anim"><td><b>A · delivery</b></td><td><code>UserService</code>, <code>OrderService</code></td><td>INT-001, INT-002</td><td>Mock de pedidos "Listos para entrega"</td><td>Semana 6 · v0.3.0</td></tr>
+    <tr class="anim"><td><b>D · payment</b></td><td><code>UserService</code></td><td>INT-002</td><td>Mock de usuario activo / inactivo</td><td>Semana 4 · v0.2.0</td></tr>
+  </table>
+  <div class="callout mt2 anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>Un mock es un elemento del backlog con su propia estimación. Si no está en GitLab, <b>no existe</b> para el Sprint.</span></div>
+  <aside class="notes">⏱ 2 min. Esta es la sección 2.3 de la plantilla vista desde todo el sistema. Pedidos es el equipo con más dependencias: tres servicios. Recomiéndales crear los tres mocks en el Sprint 1.</aside>
+</section>
+
+<section class="slide dyn" data-activity="a2" data-title="Dinámica · Del requerimiento al MR"></section>
+
+<!-- ---------- SECCIÓN 2 ---------- -->
+<section class="slide divider" data-title="02 · El Backlog" data-section="2">
+  <span class="sess">Sesión 1</span>
+  <div class="num anim">02</div>
+  <div class="dtitle"><p class="eyebrow">Sección 2</p><h2 class="anim">El Backlog</h2><p class="anim">La única fuente del trabajo del Scrum Team: qué es, cómo se estructura en GitLab y cómo se ordena.</p></div>
+  <aside class="notes">⏱ 15 min para toda la sección.</aside>
+</section>
+
+<section class="slide dyn" data-activity="a3" data-title="Dinámica · Mitos del Product Backlog"></section>
+
+<section class="slide" data-title="Qué es el Product Backlog">
+  <p class="eyebrow">Guía Scrum 2020 · artefactos</p>
+  <h2>Product Backlog: lista emergente y ordenada</h2>
+  <div class="side">
+    <div class="col">
+      <p class="lead anim">Es lo que se necesita para mejorar el producto y la <b>única fuente</b> del trabajo del Scrum Team. Su compromiso es el <b>Objetivo del Producto</b>.</p>
+      <div class="grid2 mt">
+        <div class="card tag bluec anim"><h4>Emergente</h4><p>Cambia a medida que el equipo aprende. Nunca está "terminado".</p></div>
+        <div class="card tag bluec anim"><h4>Ordenado</h4><p>No solo priorizado: tiene un primero, un segundo y un tercero.</p></div>
+        <div class="card tag tealc anim"><h4>Transparente</h4><p>Visible y entendido por todos los que trabajan en el producto.</p></div>
+        <div class="card tag tealc anim"><h4>Refinado</h4><p>Lo de arriba tiene descripción, orden y tamaño suficientes.</p></div>
+      </div>
+    </div>
+    <div class="card outline amberc anim"><h4>El Product Owner es responsable de…</h4>
+      <ul class="clean" style="font-size:16px;--c:var(--amber)"><li>Desarrollar y comunicar el Objetivo del Producto</li><li>Crear y comunicar los elementos del backlog</li><li>Ordenarlos</li><li>Asegurar que sea transparente, visible y entendido</li></ul>
+      <p class="small muted mt1">Puede delegar, pero sigue siendo responsable.</p></div>
+  </div>
+  <aside class="notes">⏱ 3 min. Definición de la Guía Scrum 2020, sección de artefactos. Remarca "ordenado" contra "priorizado": dos elementos no pueden tener ambos la prioridad 1. En el capstone el docente hace de Product Owner del Delivery System.</aside>
+</section>
+
+<section class="slide" data-title="Tres artefactos, tres compromisos">
+  <p class="eyebrow">Guía Scrum 2020 · compromisos</p>
+  <h2>Cada artefacto tiene un compromiso</h2>
+  <div class="flow mt2" style="height:210px">
+    <div class="st b-blue anim" style="padding-top:26px">Product Backlog<small>¿qué podría hacerse?</small><div class="mt1" style="font:800 20px var(--f-display);color:var(--blue)">Objetivo del Producto</div></div><div class="ar">→</div>
+    <div class="st b-amber anim" style="padding-top:26px">Sprint Backlog<small>¿qué haremos este Sprint?</small><div class="mt1" style="font:800 20px var(--f-display);color:var(--amber)">Objetivo del Sprint</div></div><div class="ar">→</div>
+    <div class="st b-green anim" style="padding-top:26px">Increment<small>¿qué está terminado?</small><div class="mt1" style="font:800 20px var(--f-display);color:var(--green)">Definición de Terminado</div></div>
+  </div>
+  <div class="card outline bluec mt2 anim"><h4>Objetivo del Producto del capstone (propuesta)</h4><p style="font-size:20px">Al cierre de la semana 9, un Delivery System de escritorio donde un cliente pide productos de un comercio activo, paga de forma simulada y un repartidor entrega el pedido, con identidad validada por <code>UserService</code> en cada paso.</p></div>
+  <aside class="notes">⏱ 2 min. Los compromisos llegaron en la Guía 2020 para dar transparencia y foco. El Objetivo del Producto se propone y se ajusta con el Product Owner: este texto es un borrador para discutir. Fíjense que nombra el flujo completo que cruza los cuatro módulos.</aside>
+</section>
+
+<section class="slide" data-title="Jerarquía del backlog en GitLab">
+  <p class="eyebrow">Backlog · estructura</p>
+  <h2>Épica → feature → historia → tarea, en GitLab</h2>
+  <div style="position:relative;height:470px;margin-top:10px">
+    <svg width="1136" height="470" style="position:absolute;inset:0" aria-hidden="true"><g stroke="#9BBCF5" stroke-width="2.5" fill="none" class="draw"><path d="M300 75 C 340 75, 340 185, 380 185"/><path d="M300 75 C 340 75, 340 290, 380 290"/><path d="M640 185 C 670 185, 670 120, 700 120"/><path d="M640 185 C 670 185, 670 250, 700 250"/><path d="M940 120 L 980 120"/></g></svg>
+    <div class="box b-blue anim" style="left:0;top:30px;width:300px;height:92px">Épica<small>Epic de grupo · EPIC-USR-03</small><span class="badge">1</span></div>
+    <div class="box b-teal anim" style="left:380px;top:140px;width:260px;height:90px">Feature<small>Label feature::roles</small><span class="badge" style="--bc:var(--teal)">2</span></div>
+    <div class="box b-teal anim" style="left:380px;top:250px;width:260px;height:80px;opacity:.7">Feature<small>feature::sesión</small></div>
+    <div class="box b-amber anim" style="left:700px;top:78px;width:240px;height:84px">Historia<small>Issue · Weight 5</small><span class="badge" style="--bc:var(--amber)">3</span></div>
+    <div class="box b-amber anim" style="left:700px;top:210px;width:240px;height:80px;opacity:.7">Historia<small>Issue · Weight 3</small></div>
+    <div class="box b-violet anim" style="left:980px;top:84px;width:156px;height:72px">Tareas<small>checklist</small><span class="badge" style="--bc:var(--violet)">4</span></div>
+    <div class="grid3" style="position:absolute;left:0;right:0;bottom:0">
+      <div class="card tag bluec anim"><h4>Milestone = Sprint</h4><p>"Sprint 1 · v0.2.0", del 12 al 23 de octubre.</p></div>
+      <div class="card tag amberc anim"><h4>Weight = story points</h4><p>Solo en historias; las tareas no se estiman en puntos.</p></div>
+      <div class="card tag violetc anim"><h4>Labels de flujo</h4><p><code>workflow::doing</code>, <code>workflow::review</code>, <code>module::user</code>.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. Mapeo con la guía de Practitioners: la épica es un Epic a nivel de grupo; la feature se maneja con labels; la historia es un issue con Weight (story points) dentro de un Milestone que representa el Sprint; las tareas son el checklist del issue, de un día o menos.</aside>
+</section>
+
+<section class="slide" data-title="El iceberg del backlog">
+  <p class="eyebrow">Backlog · DEEP</p>
+  <h2>Arriba detallado, abajo grueso</h2>
+  <div class="side" style="grid-template-columns:560px 1fr">
+    <svg viewBox="0 0 560 470" width="560" height="470" aria-label="Iceberg del backlog">
+      <path d="M0 110 H560" stroke="#2F6FE4" stroke-width="2" stroke-dasharray="6 6"/>
+      <polygon points="200,20 360,20 400,110 160,110" fill="#E8F0FE" stroke="#2F6FE4" stroke-width="2.5" class="anim"/>
+      <polygon points="160,110 400,110 470,260 90,260" fill="#D5F5EF" stroke="#0F766E" stroke-width="2.5" class="anim"/>
+      <polygon points="90,260 470,260 540,440 20,440" fill="#F1E9FF" stroke="#6D3FD6" stroke-width="2.5" class="anim"/>
+      <g font-family="Lato" font-weight="900" text-anchor="middle" fill="#13213F">
+        <text x="280" y="62" font-size="17">Sprint 1</text><text x="280" y="84" font-size="13" fill="#667085">historias listas · ≤ 8 SP</text>
+        <text x="280" y="180" font-size="17">Sprints 2 y 3</text><text x="280" y="202" font-size="13" fill="#667085">historias con talla T-shirt</text>
+        <text x="280" y="345" font-size="17">Más adelante</text><text x="280" y="367" font-size="13" fill="#667085">épicas y opcionales · "?"</text>
+      </g>
+      <text x="548" y="102" text-anchor="end" font-family="IBM Plex Mono" font-size="12" fill="#2F6FE4">horizonte del Sprint</text>
+    </svg>
+    <div class="col">
+      <div class="card tag bluec anim"><h4>D · Detallado adecuadamente</h4><p>Solo lo cercano tiene criterios de aceptación completos.</p></div>
+      <div class="card tag tealc anim"><h4>E · Estimado</h4><p>Puntos arriba, tallas al medio, nada al fondo.</p></div>
+      <div class="card tag violetc anim"><h4>E · Emergente</h4><p>Se agregan, quitan y reordenan elementos todo el tiempo.</p></div>
+      <div class="card tag amberc anim"><h4>P · Priorizado (ordenado)</h4><p>Por valor, riesgo y dependencias.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 2 min. DEEP es un acrónimo de uso común (no está en la Guía) que resume cómo se ve un backlog sano. Detallar todo de entrada es desperdicio: el fondo del iceberg va a cambiar antes de que lleguemos a él. Conecta con el pensamiento Lean que menciona la Guía.</aside>
+</section>
+
+<section class="slide" data-title="Backlog de users-module">
+  <p class="eyebrow">Ejemplo guiado · Product Backlog</p>
+  <h2>users-module, ordenado por valor y dependencias</h2>
+  <table class="t mt">
+    <tr><th>#</th><th>Elemento</th><th>Por qué en esta posición</th><th class="num">Tamaño</th></tr>
+    <tr class="anim"><td>1</td><td><b>Rol MERCHANT</b> · RF-1.13</td><td>Catálogo lo necesita para INT-002</td><td class="num">5 SP</td></tr>
+    <tr class="anim"><td>2</td><td><b>UserService: validar usuario</b> · RF-1.19/1.20</td><td>Desbloquea a los cuatro equipos</td><td class="num">5 + 3 SP</td></tr>
+    <tr class="anim"><td>3</td><td><b>Datos básicos del usuario</b> · RF-1.21</td><td>Pedidos muestra el nombre del cliente</td><td class="num">2 SP</td></tr>
+    <tr class="anim"><td>4</td><td><b>Usuarios de prueba</b> · RF-1.23</td><td>RNF-1.07: probar desde el inicio</td><td class="num">1 SP</td></tr>
+    <tr class="anim"><td>5</td><td><b>Validación de registro</b> · RF-1.06 + RF-1.01</td><td>Base del resto de la épica 1</td><td class="num">3 + 5 SP</td></tr>
+    <tr class="anim"><td>6</td><td>Inicio y cierre de sesión, sesión activa · RF-1.02/1.03/1.15</td><td>Sprint 2</td><td class="num">L · L · S</td></tr>
+    <tr class="anim"><td>7</td><td>Inactivar en lugar de borrar · RF-1.11</td><td>Pendiente de conversar con el PO</td><td class="num">M</td></tr>
+    <tr class="anim" style="opacity:.6"><td>…</td><td>Opcionales: RF-1.05, 1.12, 1.16, 1.17, 1.18, 1.22</td><td>Puntos extra, al fondo</td><td class="num">?</td></tr>
+  </table>
+  <aside class="notes">⏱ 3 min. Este es el Product Backlog que modela lo que cada equipo debe tener en GitLab al terminar la sesión. Los primeros cinco suman 24 SP: es el Sprint 1. Fíjate cómo el tamaño se vuelve más grueso hacia abajo, igual que el iceberg.</aside>
+</section>
+
+<section class="slide" data-title="Un producto, un backlog">
+  <p class="eyebrow">Guía Scrum 2020 · varios equipos</p>
+  <h2>Cuatro equipos, un solo producto</h2>
+  <div style="position:relative;height:330px;margin-top:20px">
+    <svg width="1136" height="330" style="position:absolute;inset:0" aria-hidden="true"><g stroke="#9BBCF5" stroke-width="2.5" fill="none" class="draw"><path d="M568 120 L140 240"/><path d="M568 120 L425 240"/><path d="M568 120 L710 240"/><path d="M568 120 L995 240"/></g></svg>
+    <div class="box b-blue anim" style="left:368px;top:10px;width:400px;height:110px">Delivery System<small>1 Product Owner · 1 Product Backlog · 1 Objetivo del Producto</small></div>
+    <div class="box b-red anim" style="left:30px;top:240px;width:220px;height:80px">Equipo A<small>delivery-module</small></div>
+    <div class="box b-amber anim" style="left:315px;top:240px;width:220px;height:80px">Equipo B<small>order-module</small></div>
+    <div class="box b-teal anim" style="left:600px;top:240px;width:220px;height:80px">Equipo C<small>catalog-module</small></div>
+    <div class="box b-violet anim" style="left:885px;top:240px;width:220px;height:80px">Equipo D<small>payment-module</small></div>
+  </div>
+  <div class="callout mt anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>La Guía: si varios Scrum Teams trabajan en el mismo producto, <b>comparten Objetivo del Producto, Product Backlog y Product Owner</b>, y también la misma Definición de Terminado.</span></div>
+  <aside class="notes">⏱ 1 min. En GitLab esto se ve como un solo grupo con cuatro épicas. Cada equipo filtra por su label de módulo, pero el orden global lo decide el Product Owner. La DoD compartida es el tema central de la sesión 2.</aside>
+</section>
+
+<section class="slide dyn" data-activity="a4" data-title="Dinámica · Ordena el backlog"></section>
+
+<!-- ---------- SECCIÓN 3 ---------- -->
+<section class="slide divider" data-title="03 · Refinamiento" data-section="3">
+  <span class="sess">Sesión 1</span>
+  <div class="num anim">03</div>
+  <div class="dtitle"><p class="eyebrow">Sección 3</p><h2 class="anim">Refinamiento del Product Backlog</h2><p class="anim">Definición de Listo, el enfoque INVEST y estimaciones: de los modelos de investigación al Planning Poker del equipo.</p></div>
+  <aside class="notes">⏱ 50 min para toda la sección: 20 para DoR e INVEST y 30 para estimaciones.</aside>
+</section>
+
+<section class="slide dyn" data-activity="a5" data-title="Dinámica · ¿Quién refina y cuándo?"></section>
+
+<section class="slide" data-title="Qué es el refinamiento">
+  <p class="eyebrow">Guía Scrum 2020 · refinamiento</p>
+  <h2>Refinar es dividir y definir, de forma continua</h2>
+  <div class="side">
+    <div class="col">
+      <p class="lead anim">El refinamiento divide y define los elementos del Product Backlog en piezas más pequeñas y precisas, agregando <b>descripción, orden y tamaño</b>. Es una actividad continua, no un evento de Scrum.</p>
+      <div class="grid3 mt">
+        <div class="anim"><div class="kpi">≤ 10 %</div><small class="muted">de la capacidad, práctica común</small></div>
+        <div class="anim"><div class="kpi">1–2</div><small class="muted">Sprints de backlog listo por delante</small></div>
+        <div class="anim"><div class="kpi">≤ 1 día</div><small class="muted">por tarea al planificar</small></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card tag bluec anim"><h4>Product Owner</h4><p>Explica el valor, aclara dudas, decide el orden.</p></div>
+      <div class="card tag tealc anim"><h4>Developers</h4><p>Hacen preguntas técnicas, dividen y <b>dimensionan</b>.</p></div>
+      <div class="card tag violetc anim"><h4>Scrum Master</h4><p>Facilita y cuida que no se convierta en diseño detallado.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. La primera frase es de la Guía 2020. El 10 % de la capacidad y el horizonte de 1–2 Sprints no son de la Guía: son prácticas comunes (aparecen en artículos de Scrum.org y Scrum Alliance) que funcionan como punto de partida. Para un equipo de 4 en un Sprint de 2 semanas son unas 3–4 horas de refinamiento.</aside>
+</section>
+
+<section class="slide" data-title="Flujo de refinamiento">
+  <p class="eyebrow">Refinamiento · paso a paso</p>
+  <h2>Una sesión de refinamiento en seis pasos</h2>
+  <div class="flow mt2">
+    <div class="st b-blue anim">Entender<small>el PO explica el valor</small></div><div class="ar">→</div>
+    <div class="st b-blue anim">Preguntar<small>supuestos y dependencias</small></div><div class="ar">→</div>
+    <div class="st b-amber anim">Dividir<small>por flujo o por regla</small></div><div class="ar">→</div>
+    <div class="st b-amber anim">Criterios<small>Dado · Cuando · Entonces</small></div><div class="ar">→</div>
+    <div class="st b-violet anim">Estimar<small>Planning Poker</small></div><div class="ar">→</div>
+    <div class="st b-green anim">¿Lista?<small>contra la DoR</small></div>
+  </div>
+  <div class="grid2 mt2">
+    <div class="card outline amberc anim"><h4>Formas de dividir una historia</h4><p>Por pasos del flujo (registro → validación → confirmación), por regla de negocio (crear vs. editar), por tipo de dato o por camino feliz primero y excepciones después.</p></div>
+    <div class="card outline violetc anim"><h4>Señales de que no está lista</h4><p>Nadie puede explicar cómo probarla, los votos de Poker van de 2 a 21, depende de algo que no existe y no tiene mock.</p></div>
+  </div>
+  <aside class="notes">⏱ 3 min. Este flujo es el que vamos a aplicar en vivo con la brecha MERCHANT dentro de unos minutos. La división por camino feliz primero es la más útil en el capstone: primero el caso de uso sin errores, después los flujos alternos A1, A2…</aside>
+</section>
+
+<section class="slide" data-title="Definición de Listo (DoR)">
+  <p class="eyebrow">Refinamiento · Definición de Listo</p>
+  <h2>DoR: cuándo una historia puede entrar al Sprint</h2>
+  <div class="side" style="grid-template-columns:1fr 400px">
+    <div class="card anim" style="padding:20px 24px">
+      <h4 style="font-size:21px">DoR propuesta para el capstone</h4>
+      <ul class="clean check mt1" style="font-size:19px">
+        <li data-step="1">Está trazada a un FUN o INT de la épica</li>
+        <li data-step="2">Tiene criterios de aceptación en formato Dado / Cuando / Entonces</li>
+        <li data-step="3">Sus dependencias están identificadas y cada servicio externo tiene mock</li>
+        <li data-step="4">Está estimada por los Developers (Weight en GitLab)</li>
+        <li data-step="5">Cabe en un Sprint: 8 SP o menos</li>
+        <li data-step="6">El equipo sabe cómo probarla: memoria, H2 o FXML</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="card tag amberc anim"><h4>No está en la Guía</h4><p>La Guía habla de elementos "preparados para ser seleccionados". La DoR es una práctica que el equipo adopta si le sirve.</p></div>
+      <div class="card tag redc anim"><h4>Riesgo</h4><p>Una DoR demasiado estricta se vuelve una puerta de cascada: nada entra hasta estar "perfecto".</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 4 min. Avanza punto por punto (la diapositiva tiene seis pasos). Para cada uno pregunta: ¿esta historia de su módulo lo cumple? Recalca que la DoR es una lista de verificación de entrada, mientras que la DoD (sesión 2) es la de salida. Mantenerla corta: seis puntos como máximo.</aside>
+</section>
+
+<section class="slide" data-title="INVEST y las 3C">
+  <p class="eyebrow">Refinamiento · INVEST</p>
+  <h2>Una buena historia es INVEST</h2>
+  <div class="grid3 mt" style="grid-template-columns:repeat(6,1fr);gap:12px">
+    <div class="card outline bluec anim" style="--c:#1F4FD8;text-align:center"><div class="letter">I</div><h4>Independiente</h4><p>Se entrega sin esperar a otra</p></div>
+    <div class="card outline tealc anim" style="text-align:center"><div class="letter">N</div><h4>Negociable</h4><p>Invita a conversar, no es contrato</p></div>
+    <div class="card outline violetc anim" style="--c:#7C3AED;text-align:center"><div class="letter">V</div><h4>Valiosa</h4><p>Alguien la quiere y sabe por qué</p></div>
+    <div class="card outline amberc anim" style="text-align:center"><div class="letter">E</div><h4>Estimable</h4><p>El equipo entiende lo suficiente</p></div>
+    <div class="card outline redc anim" style="--c:#BE123C;text-align:center"><div class="letter">S</div><h4>Pequeña</h4><p>Cabe en un Sprint</p></div>
+    <div class="card outline anim" style="--c:#0E7490;text-align:center"><div class="letter">T</div><h4>Testeable</h4><p>Se sabe cuándo está bien</p></div>
+  </div>
+  <div class="grid3 mt2">
+    <div class="card tag bluec anim"><h4>Card</h4><p>La tarjeta: "Como &lt;rol&gt;, quiero &lt;acción&gt;, para &lt;beneficio&gt;".</p></div>
+    <div class="card tag tealc anim"><h4>Conversation</h4><p>Los detalles salen de hablar con el Product Owner, no del texto.</p></div>
+    <div class="card tag greenc anim"><h4>Confirmation</h4><p>Los criterios de aceptación confirman que está terminada.</p></div>
+  </div>
+  <aside class="notes">⏱ 3 min. INVEST (Bill Wake) y las 3C (Ron Jeffries). En el capstone la I es la más difícil: muchas historias dependen de otro módulo. La forma de recuperar la independencia es el mock: la historia de pedidos se puede terminar contra un CatalogService falso.</aside>
+</section>
+
+<section class="slide" data-title="Antes y después">
+  <p class="eyebrow">Refinamiento · ejemplo</p>
+  <h2>RF-1.04 antes y después de refinar</h2>
+  <div class="grid2 mt">
+    <div class="card outline redc anim"><h4>Antes · una sola historia XL</h4><p style="font-size:19px">"Como usuario, quiero recuperar mi contraseña de forma segura."</p><p class="small muted mt1">Falla S (no cabe) y T (¿qué es "segura"?). Votos de Poker: 5, 13, 21, ?</p></div>
+    <div class="card outline greenc anim"><h4>Después · tres historias</h4>
+      <ul class="clean" style="font-size:17px;--c:var(--green)"><li><b>HU-04a</b> Solicitar código temporal con mi correo · 3 SP</li><li><b>HU-04b</b> Cambiar la contraseña con un código válido · 3 SP</li><li><b>HU-04c</b> Rechazar códigos vencidos o ya usados · 2 SP</li></ul></div>
+  </div>
+  <div class="formula mt anim" style="font-size:18px"><b>Dado</b> un código emitido hace más de 15 minutos<br><b>Cuando</b> intento cambiar mi contraseña con ese código<br><b>Entonces</b> veo "El código venció" y la contraseña no cambia</div>
+  <aside class="notes">⏱ 3 min. Ejemplo de división por pasos del flujo. El envío de correo se simula (el capstone no tiene servidor de correo): esa decisión también es parte del refinamiento y se anota en la historia. Los 15 minutos son un valor que se acuerda con el Product Owner.</aside>
+</section>
+
+<section class="slide" data-title="Refinando MERCHANT en vivo">
+  <p class="eyebrow">Ejemplo guiado · refinamiento en vivo</p>
+  <h2>La brecha MERCHANT, lista para el Sprint 1</h2>
+  <div class="grid3 mt">
+    <div class="card tag tealc anim"><h4>HU-13a · 2 SP</h4><p>Como comercio, quiero registrarme con el rol MERCHANT.</p><p class="small muted mt1">Agregar valor al enum, migración Flyway, opción en el formulario.</p></div>
+    <div class="card tag bluec anim"><h4>HU-20 · 3 SP</h4><p>Como módulo de catálogo, quiero preguntar si un usuario existe, está activo y qué rol tiene.</p><p class="small muted mt1"><code>UserService.validate(UUID)</code> → <code>UserIdentity</code></p></div>
+    <div class="card tag violetc anim"><h4>HU-21 · 2 SP</h4><p>Como módulo de pedidos, quiero el nombre del cliente sin datos sensibles.</p><p class="small muted mt1">DTO con nombre, rol y estado. Nunca la contraseña.</p></div>
+  </div>
+  <div class="formula mt anim" style="font-size:17px">public interface <b>UserService</b> {<br>&nbsp;&nbsp;Optional&lt;UserIdentity&gt; validate(UUID userId);&nbsp;&nbsp;<span style="color:#667085">// RF-1.20</span><br>&nbsp;&nbsp;Optional&lt;UserSummary&gt; basicInfo(UUID userId);&nbsp;&nbsp;<span style="color:#667085">// RF-1.21</span><br>}&nbsp;&nbsp;<span style="color:#667085">// record UserIdentity(UUID id, UserRole role, boolean active)</span></div>
+  <aside class="notes">⏱ 4 min. Construye esto con el grupo, en vivo si es posible: primero la historia grande "agregar MERCHANT y UserService", después la división. El contrato devuelve DTOs (records), nunca la entidad User ni el repositorio, por la regla 5. Este código es el que se desarrolla en el ejemplo guiado docs/guie-example_1.</aside>
+</section>
+
+<section class="slide dyn" data-activity="a6" data-title="Dinámica · INVEST"></section>
+
+<section class="slide" data-title="Por qué estimamos">
+  <p class="eyebrow">Estimaciones · fundamentos</p>
+  <h2>Estimar es para decidir, no para prometer</h2>
+  <div class="side" style="grid-template-columns:1fr 420px">
+    <div class="col">
+      <div class="card tag bluec anim"><h4>Relativo, no absoluto</h4><p>"HU-20 es más o menos el doble que HU-13a" es más estable que "HU-20 son 6 horas".</p></div>
+      <div class="card tag tealc anim"><h4>Story points</h4><p>Combinan esfuerzo, complejidad e incertidumbre. Son del equipo: no se comparan entre equipos.</p></div>
+      <div class="card tag amberc anim"><h4>Fibonacci</h4><p>Los saltos crecen porque la incertidumbre crece con el tamaño: entre 13 y 21 no tiene sentido discutir un 17.</p></div>
+    </div>
+    <div class="anim" style="text-align:center">
+      <div class="fib" style="flex-wrap:wrap;justify-content:center" id="fibcards"><span>1</span><span>2</span><span>3</span><span>5</span><span>8</span><span>13</span><span>21</span><span>?</span><span>☕</span></div>
+      <p class="small muted mt">"?" = no entiendo lo suficiente · "☕" = necesitamos una pausa</p>
+    </div>
+  </div>
+  <aside class="notes">⏱ 2 min. Antes de entrar a los modelos de investigación, aclara para qué estimamos: ordenar, decidir cuánto entra al Sprint y detectar historias que no entendemos. Los dos papers que siguen buscan lo mismo con más formalidad.</aside>
+</section>
+
+<section class="slide" data-title="Govil & Sharma · 36 factores">
+  <p class="eyebrow">Estimación · Govil & Sharma (2023)</p>
+  <h2>36 factores de éxito en cinco dimensiones</h2>
+  <div class="side" style="grid-template-columns:600px 1fr">
+    <div>
+      <div class="waffle anim" id="waffle"></div>
+      <div class="legend mt"><span><i style="background:#1F4FD8"></i>Personas · 6</span><span><i style="background:#0F766E"></i>Proceso · 7</span><span><i style="background:#B45309"></i>Proyecto · 7</span><span><i style="background:#7C3AED"></i>Organización · 8</span><span><i style="background:#BE123C"></i>Técnica · 8</span></div>
+    </div>
+    <div class="col">
+      <div class="card tag bluec anim"><h4>De dónde salen</h4><p>Chow y Cao identificaron 36 factores críticos de éxito en proyectos ágiles.</p></div>
+      <div class="card tag amberc anim"><h4>Qué propone el paper</h4><p>Extender un algoritmo previo (Popli & Chauhan) que usaba 14 factores de personas y proyecto, para incluir los 36.</p></div>
+      <div class="card tag violetc anim"><h4>Supuesto clave</h4><p>Cada factor vale 1.0 (nominal, como en COCOMO intermedio) y se suma el esfuerzo de pruebas de regresión por Sprint.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. Cada cuadro es un factor de la Tabla 1 del paper. Ejemplos: "equipo con alta competencia" (personas), "reuniones diarias cara a cara" (proceso), "proyecto con equipo pequeño" (proyecto), "cultura organizacional cooperativa" (organización), "pruebas de integración correctas" (técnica). Pregunta: ¿cuáles de estos factores tiene su equipo del capstone?</aside>
+</section>
+
+<section class="slide" data-title="Govil & Sharma · algoritmo">
+  <p class="eyebrow">Estimación · algoritmo extendido</p>
+  <h2>Once pasos, del dato de entrada al costo</h2>
+  <div class="grid2 mt" style="grid-template-columns:1.1fr 1fr">
+    <table class="t anim">
+      <tr><th>Paso</th><th>Fórmula</th><th class="num">P1 del paper</th></tr>
+      <tr><td>1 · BSP</td><td>Historias × SP por historia</td><td class="num" data-count="220">220</td></tr>
+      <tr><td>2 · UV</td><td>Valor hipotético × 36</td><td class="num">36</td></tr>
+      <tr><td>3 · ESP</td><td>BSP + 0.1 × UV</td><td class="num">223.6</td></tr>
+      <tr><td>4 · V</td><td>SP por iteración ÷ SP por historia</td><td class="num">4.80</td></tr>
+      <tr><td>5 · DV</td><td>V × factor de velocidad</td><td class="num">4.61</td></tr>
+      <tr><td>6 · EDT</td><td>ESP ÷ DV</td><td class="num">48.52 d</td></tr>
+      <tr><td>7 · TET</td><td>EDT + tiempo de pruebas</td><td class="num">55.52 d</td></tr>
+      <tr><td>8 · I</td><td>TET ÷ días por iteración</td><td class="num">4.27</td></tr>
+      <tr><td>9 · ERTE</td><td>Regresión × (I − 1)</td><td class="num">32.71 SP</td></tr>
+      <tr><td>10 · TEE</td><td>ESP + ERTE</td><td class="num">256.31 SP</td></tr>
+      <tr class="hl"><td>11 · TEC</td><td>TEE × costo por SP</td><td class="num">$12,302.93</td></tr>
+    </table>
+    <div class="col">
+      <div class="card outline bluec anim"><h4>Entradas de P1</h4><p>22 historias de 10 SP, 48 SP por iteración de 13 días, factor de velocidad 0.96, 7 días de pruebas, 10 SP de regresión por iteración, $48 por SP.</p></div>
+      <div class="card tag amberc anim"><h4>Lectura crítica</h4><p>El paper escribe "BSP = US + SP" pero calcula 22 × 10. Y el valor UV es hipotético: el resultado depende de supuestos que el equipo debe validar.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 4 min. Recorre la tabla de arriba abajo con el ejemplo P1 del propio paper (sección 5). Los valores son exactos del artículo. Vale la pena señalar la inconsistencia de la fórmula 1: leer un paper con ojo crítico también es parte de la ingeniería. Lo útil del modelo es la estructura: separa el esfuerzo de desarrollo del esfuerzo de regresión.</aside>
+</section>
+
+<section class="slide" data-title="Govil & Sharma · resultados">
+  <p class="eyebrow">Estimación · comparación</p>
+  <h2>Algoritmo extendido vs. existente: tiempo total estimado</h2>
+  <div class="chart mt anim" data-chart="tet" style="height:360px"></div>
+  <div class="legend"><span><i style="background:#F2B705"></i>Extendido · 36 factores</span><span><i style="background:#2F6FE4"></i>Existente · 14 factores</span><span class="muted">Días · 12 proyectos de baja (P1–P4), media (P5–P8) y alta (P9–P12) complejidad</span></div>
+  <div class="grid3 mt1">
+    <div class="anim"><div class="kpi" style="font-size:40px">1.92–8.55</div><small class="muted">días menos de TET</small></div>
+    <div class="anim"><div class="kpi" style="font-size:40px">0.07–0.58</div><small class="muted">iteraciones menos</small></div>
+    <div class="anim"><div class="kpi" style="font-size:40px">$22–$287</div><small class="muted">menos de costo total</small></div>
+  </div>
+  <aside class="notes">⏱ 3 min. Datos de las tablas 4, 5 y 6 del paper. El extendido estima menos tiempo en los 12 proyectos, con diferencias mayores en los proyectos de baja complejidad. Pregunta crítica: ¿estimar menos es "mejor"? Solo si se acerca al esfuerzo real. Este paper compara contra otro modelo, no contra la realidad; el siguiente paper sí mide contra el esfuerzo real.</aside>
+</section>
+
+<section class="slide" data-title="Govil & Sharma en users-module">
+  <p class="eyebrow">Ejemplo guiado · aplicar el modelo</p>
+  <h2>El mismo algoritmo con los números de users-module</h2>
+  <div class="grid2 mt" style="grid-template-columns:1fr 1fr">
+    <table class="t anim">
+      <tr><th>Entrada</th><th class="num">Valor</th></tr>
+      <tr><td>Historias obligatorias</td><td class="num">17</td></tr>
+      <tr><td>SP promedio por historia</td><td class="num">4.47</td></tr>
+      <tr><td>Nivel de factores · UV hipotético</td><td class="num">Medio · 2</td></tr>
+      <tr><td>SP por iteración (plan)</td><td class="num">24</td></tr>
+      <tr><td>Factor de velocidad</td><td class="num">0.96</td></tr>
+      <tr><td>Días de pruebas · días por Sprint</td><td class="num">4 · 10</td></tr>
+      <tr><td>Regresión por iteración</td><td class="num">3 SP</td></tr>
+    </table>
+    <table class="t anim">
+      <tr><th>Resultado</th><th class="num">Valor</th></tr>
+      <tr><td>BSP → ESP</td><td class="num">76 → 83.2 SP</td></tr>
+      <tr><td>V → DV</td><td class="num">5.37 → 5.15</td></tr>
+      <tr><td>EDT · TET</td><td class="num">16.14 · 20.14 días</td></tr>
+      <tr><td>Iteraciones (I)</td><td class="num">2.01</td></tr>
+      <tr><td>Regresión (ERTE)</td><td class="num">3.04 SP</td></tr>
+      <tr class="hl"><td>Esfuerzo total (TEE)</td><td class="num">86.24 SP</td></tr>
+      <tr><td>Con 1 SP ≈ 4 h</td><td class="num">≈ 345 h</td></tr>
+    </table>
+  </div>
+  <div class="callout mt anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>El modelo dice <b>2 iteraciones</b>; en horas, 345 h ÷ 120 h por Sprint ≈ <b>2.9 Sprints</b>. Dos lecturas distintas: por eso el Gantt planea 3 Sprints y deja la semana 9 de holgura.</span></div>
+  <aside class="notes">⏱ 4 min. Cálculos hechos con las fórmulas del paper. Las 120 h por Sprint salen de 4 personas × 10 días × 3 horas de foco por día en el capstone. La lección: los modelos dan un rango, no una fecha. Cuando dos lecturas difieren, el plan toma la más conservadora y se revisa con la velocidad real después del Sprint 1.</aside>
+</section>
+
+<section class="slide" data-title="Adnan & Afzal · multiagente">
+  <p class="eyebrow">Estimación · Adnan & Afzal (2017)</p>
+  <h2>Un sistema multiagente que aprende de proyectos anteriores</h2>
+  <div style="position:relative;height:420px;margin-top:16px">
+    <svg width="1136" height="420" style="position:absolute;inset:0" aria-hidden="true"><g stroke="#9BBCF5" stroke-width="2.5" fill="none" class="draw"><path d="M200 210 L330 210"/><path d="M560 210 L640 70"/><path d="M560 210 L640 165"/><path d="M560 210 L640 260"/><path d="M560 210 L640 355"/><path d="M445 255 L445 330"/></g></svg>
+    <div class="box b-amber anim" style="left:0;top:160px;width:200px;height:100px">Scrum Master<small>dominio · proyectos · top-k lecciones</small></div>
+    <div class="box b-blue anim" style="left:330px;top:160px;width:230px;height:100px;border-width:3.5px">Estimate agent<small>Resources × Sprints × Length</small><span class="badge">5</span></div>
+    <div class="box b-violet anim" style="left:330px;top:330px;width:230px;height:80px">Ontología Scrum<small>34 clases · OWL · HermiT</small></div>
+    <div class="box b-teal anim" style="left:640px;top:40px;width:250px;height:64px">Project agent<small>Sprints requeridos · duración</small></div>
+    <div class="box b-teal anim" style="left:640px;top:132px;width:250px;height:64px">Feature agent<small>features por Sprint</small></div>
+    <div class="box b-teal anim" style="left:640px;top:226px;width:250px;height:64px">Phase agent<small>equipo y días por fase</small></div>
+    <div class="box b-teal anim" style="left:640px;top:322px;width:250px;height:64px">Lesson agent<small>lecciones aprendidas</small></div>
+    <div class="card outline bluec anim" style="position:absolute;right:0;top:60px;width:220px"><h4>Ejemplo del paper</h4><p>Carrito de compras: 2 Sprints de 12 días; equipos de 1, 2, 2 y 1 por fase.</p><div class="kpi mt1" style="font-size:40px">144</div><small class="muted">persona-días = 6 × 2 × 12</small></div>
+  </div>
+  <aside class="notes">⏱ 3 min. El Scrum Master indica dominio, proyectos relevantes y cuántas lecciones quiere. Cuatro agentes consultan la ontología en paralelo y el agente de estimación compila: Resources = suma de equipos por fase (1+2+2+1 = 6); esfuerzo = 6 × 2 Sprints × 12 días = 144 persona-días (Fig. 7 del paper).
+La idea útil para el capstone es el Lesson agent: guardar lecciones aprendidas por Sprint para mejorar la siguiente estimación. Es lo que hace una buena Retrospective.</aside>
+</section>
+
+<section class="slide" data-title="MMRE y PRED">
+  <p class="eyebrow">Estimación · ¿qué tan precisa?</p>
+  <h2>Medir la estimación contra el esfuerzo real</h2>
+  <div class="side" style="grid-template-columns:1fr 380px">
+    <div>
+      <div class="chart anim" data-chart="adnan" style="height:330px"></div>
+      <div class="legend"><span><i style="background:#C2410C"></i>Esfuerzo real</span><span><i style="background:#2F6FE4"></i>Multiagente</span><span><i style="background:#F2B705"></i>Delphi</span><span><i style="background:#16A34A"></i>Planning Poker</span><span class="muted">persona-días · 12 proyectos web</span></div>
+    </div>
+    <div class="col">
+      <div class="formula anim">MRE = <b>|AE − EE|</b> ÷ AE</div>
+      <div class="formula anim">PRED(25) = <b>L</b> ÷ N<br><span style="font-size:15px;color:#667085">L = proyectos con MRE ≤ 0.25</span></div>
+      <div class="card tag greenc anim"><h4>Criterio de un buen modelo</h4><p>MMRE ≤ 0.25 y PRED(25) ≥ 0.75</p></div>
+      <div class="card tag redc anim"><h4>P4: el caso difícil</h4><p>Real 131, multiagente 90 → MRE 0.31. Los tres métodos fallan en P4.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. Datos de la Tabla 1: siete profesionales de XcellentSoft, 12 proyectos de e-commerce en PHP y MySQL. AE es el esfuerzo real y EE el estimado. P4 está fuera del 25 % para los tres métodos: hay proyectos que ningún modelo predice bien.</aside>
+</section>
+
+<section class="slide" data-title="Resultados de precisión">
+  <p class="eyebrow">Estimación · resultados</p>
+  <h2>Multiagente, Planning Poker y Delphi</h2>
+  <div class="grid2 mt">
+    <div><h3 style="font-size:20px">MMRE <span class="muted" style="font:400 15px var(--f-body)">menor es mejor · umbral 0.25</span></h3><div class="chart anim" data-chart="mmre" style="height:300px"></div></div>
+    <div><h3 style="font-size:20px">PRED(25) <span class="muted" style="font:400 15px var(--f-body)">mayor es mejor · umbral 0.75</span></h3><div class="chart anim" data-chart="pred" style="height:300px"></div></div>
+  </div>
+  <div class="callout mt anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>Planning Poker queda <b>muy cerca</b> del sistema multiagente (0.120 vs 0.101) sin ontología ni agentes. Para un equipo de curso, la conversación vale más que la herramienta.</span></div>
+  <aside class="notes">⏱ 2 min. Tabla 2 del paper. Los tres métodos cumplen el umbral de PRED(25) ≥ 0.75; Delphi queda justo en el límite. El paper concluye que su propuesta es la más precisa, y es cierto, pero la diferencia con Planning Poker es pequeña. Por eso en el capstone usaremos Planning Poker con lecciones aprendidas de cada Sprint.</aside>
+</section>
+
+<section class="slide" data-title="Versión simple: SP y Planning Poker">
+  <p class="eyebrow">Estimación · lo que haremos en el capstone</p>
+  <h2>Story points y Planning Poker, paso a paso</h2>
+  <div class="flow mt">
+    <div class="st b-blue anim">Leer la HU<small>el PO la explica</small></div><div class="ar">→</div>
+    <div class="st b-blue anim">Votar en secreto<small>todos a la vez</small></div><div class="ar">→</div>
+    <div class="st b-amber anim">Revelar<small>sin juzgar</small></div><div class="ar">→</div>
+    <div class="st b-amber anim">Hablan los extremos<small>el más bajo y el más alto</small></div><div class="ar">→</div>
+    <div class="st b-green anim">Re-votar<small>hasta converger</small></div>
+  </div>
+  <table class="t mt anim">
+    <tr><th>Historia del Sprint 1</th><th>Ronda 1</th><th>Ronda 2</th><th class="num">Acuerdo</th></tr>
+    <tr><td>HU-13a Rol MERCHANT</td><td class="mono">2 · 2 · 3 · 8</td><td class="mono">2 · 2 · 2 · 3</td><td class="num">2</td></tr>
+    <tr><td>HU-20 Validar usuario (UserService)</td><td class="mono">3 · 5 · 5 · 3</td><td class="mono">3 · 3 · 3 · 5</td><td class="num">3</td></tr>
+    <tr><td>HU-21 Datos básicos</td><td class="mono">2 · 2 · 1 · 2</td><td>—</td><td class="num">2</td></tr>
+    <tr><td>HU-23 Usuarios de prueba</td><td class="mono">1 · 1 · 1 · 2</td><td>—</td><td class="num">1</td></tr>
+    <tr class="hl"><td><b>Capacidad planeada del Sprint 1</b></td><td colspan="2">velocidad inicial supuesta: 24 SP</td><td class="num">24</td></tr>
+  </table>
+  <aside class="notes">⏱ 3 min. En la ronda 1 de MERCHANT alguien votó 8: al hablar, explicó que pensaba que había que migrar datos existentes. El grupo aclaró que no hay usuarios en producción y en la ronda 2 se convergió en 2. Ese es el valor de Planning Poker: descubrir supuestos.
+Sin historia previa, la velocidad del Sprint 1 es una suposición; después del Sprint 1 se usa la velocidad real.</aside>
+</section>
+
+<section class="slide dyn" data-activity="a7" data-title="Dinámica · Planning Poker"></section>
+<section class="slide dyn" data-activity="a8" data-title="Dinámica · Quiz de estimación"></section>
+
+<section class="slide" data-title="Cierre de la sesión 1">
+  <p class="eyebrow">Cierre · Sesión 1</p>
+  <h2>Antes de la próxima sesión</h2>
+  <div class="grid2 mt2">
+    <div class="card anim" style="padding:20px 24px"><h4 style="font-size:21px">Entregable del equipo</h4>
+      <ul class="clean check mt1" style="font-size:18px"><li>Épica desglosada en historias en GitLab, con labels de módulo</li><li>Backlog ordenado por valor y dependencias</li><li>Historias del Sprint 1 refinadas: criterios de aceptación y Weight</li><li>Un issue por cada mock que necesitan</li><li>Secciones 1 y 2 de la plantilla en <code>&lt;module&gt;/requirements/</code></li></ul></div>
+    <div class="col">
+      <div class="card tag bluec anim"><h4>Tres ideas para llevarse</h4><p>Arriba va lo que desbloquea a otros. Refinar es continuo. La estimación sirve para conversar y decidir.</p></div>
+      <div class="card tag amberc anim"><h4>Sesión 2</h4><p>Sprint Planning con un Sprint Goal SMART, la DoD común y cómo medir el avance.</p></div>
+      <div class="card tag greenc anim"><h4>Practica a tu ritmo</h4><p>Todas las dinámicas están en la web, sección "Practicar".</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. Muestra el ranking de la sesión desde la consola del docente. Recuerda el entregable y que la próxima sesión arranca con el Sprint 1 ya en marcha.</aside>
+</section>
+
+<!-- ===================== SESIÓN 2 ===================== -->
+
+<section class="slide cover" data-title="Portada · Sesión 2">
+  <p class="eyebrow">Desarrollo de Software 2 · Semana 3 · Sesión 2 de 2</p>
+  <h1 class="anim" style="margin-top:110px">Planear, terminar<br>y medir</h1>
+  <p class="sub anim">«Terminado significa lo mismo para los cuatro equipos.»</p>
+  <p class="anim" style="margin-top:26px;font-size:21px;max-width:560px">Sprint Planning con objetivos SMART, la Definición de Terminado y el seguimiento del progreso con tablero, burndown y burnup.</p>
+  <div class="stack" aria-hidden="true">
+    <div class="pbi" style="top:40px;background:#174A3E;border-color:#2D8A72">✓ compila · mvnw clean install</div>
+    <div class="pbi" style="top:116px;background:#174A3E;border-color:#2D8A72">✓ prueba del caso de uso</div>
+    <div class="pbi" style="top:192px;background:#174A3E;border-color:#2D8A72">✓ adaptador JPA con H2</div>
+    <div class="pbi" style="top:268px;background:#174A3E;border-color:#2D8A72">✓ MR revisado</div>
+    <div class="pbi" style="top:344px;background:#174A3E;border-color:#2D8A72">✓ pipeline en verde</div>
+  </div>
+  <aside class="notes">⏱ 2 min. La pila de la derecha es un adelanto de la DoD común que vamos a construir. Pregunta rápida para arrancar: ¿qué equipo ya tiene su Sprint 1 en un Milestone de GitLab?</aside>
+</section>
+
+<section class="slide" data-title="Recap de la sesión 1">
+  <p class="eyebrow">Recap · Sesión 1</p>
+  <h2>Lo que ya tenemos</h2>
+  <div class="grid3 mt2">
+    <div class="card outline bluec anim"><h4>Checkpoint</h4><p>Trazabilidad FUN → HU → CU, tallas T-shirt y un Gantt de 3 Sprints de 2 semanas.</p></div>
+    <div class="card outline tealc anim"><h4>Backlog</h4><p>Un producto, un PO, un backlog ordenado: arriba MERCHANT y UserService.</p></div>
+    <div class="card outline amberc anim"><h4>Refinamiento</h4><p>DoR de seis puntos, historias INVEST y estimación con Planning Poker.</p></div>
+  </div>
+  <div class="row mt2" style="justify-content:space-around">
+    <div class="anim" style="text-align:center"><div class="kpi" data-count="76">76</div><small class="muted">SP obligatorios en users-module</small></div>
+    <div class="anim" style="text-align:center"><div class="kpi" data-count="24">24</div><small class="muted">SP en el Sprint 1</small></div>
+    <div class="anim" style="text-align:center"><div class="kpi">0.120</div><small class="muted">MMRE de Planning Poker</small></div>
+  </div>
+  <aside class="notes">⏱ 3 min. Repaso rápido. Si hay tiempo, pregunta a un equipo por su primera historia del backlog y por qué está ahí.</aside>
+</section>
+
+<!-- ---------- SECCIÓN 4 ---------- -->
+<section class="slide divider" data-title="04 · Sprint Planning" data-section="4">
+  <span class="sess">Sesión 2</span>
+  <div class="num anim">04</div>
+  <div class="dtitle"><p class="eyebrow">Sección 4</p><h2 class="anim">Planificación del Sprint</h2><p class="anim">Los tres temas de la Sprint Planning, objetivos SMART y la Definición de Terminado.</p></div>
+  <aside class="notes">⏱ 45 min para toda la sección: 20 para Sprint Planning y SMART, 25 para la DoD.</aside>
+</section>
+
+<section class="slide dyn" data-activity="a9" data-title="Dinámica · Calentamiento"></section>
+
+<section class="slide" data-title="Los tres temas">
+  <p class="eyebrow">Guía Scrum 2020 · Sprint Planning</p>
+  <h2>Por qué, qué y cómo</h2>
+  <div class="grid3 mt2">
+    <div class="card outline bluec anim"><div class="letter" style="font-size:44px">¿Por qué?</div><h4 class="mt1">Tema uno</h4><p>El Product Owner propone cómo aumentar el valor; todo el Scrum Team define el <b>Objetivo del Sprint</b> antes de terminar la Planning.</p></div>
+    <div class="card outline amberc anim"><div class="letter" style="font-size:44px">¿Qué?</div><h4 class="mt1">Tema dos</h4><p>Los Developers seleccionan elementos del Product Backlog en conversación con el PO, según desempeño pasado, capacidad y DoD.</p></div>
+    <div class="card outline greenc anim"><div class="letter" style="font-size:44px">¿Cómo?</div><h4 class="mt1">Tema tres</h4><p>Los Developers descomponen el trabajo en piezas de un día o menos. Nadie más les dice cómo.</p></div>
+  </div>
+  <div class="row mt2" style="align-items:center;gap:40px">
+    <div class="anim"><div class="kpi">8 h</div><small class="muted">máximo para un Sprint de un mes</small></div>
+    <div class="anim"><div class="kpi">≈ 4 h</div><small class="muted">tope proporcional para 2 semanas</small></div>
+    <div class="callout anim" style="flex:1"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>Objetivo + elementos + plan = <b>Sprint Backlog</b></span></div>
+  </div>
+  <aside class="notes">⏱ 3 min. Los tres temas son de la Guía 2020; el "por qué" es la novedad respecto de la versión 2017. El tope de 4 h es proporcional: la Guía dice que para Sprints más cortos el evento suele ser más breve. En el capstone, con el backlog refinado, una Planning de 60–90 min es razonable.</aside>
+</section>
+
+<section class="slide" data-title="Entradas y salidas">
+  <p class="eyebrow">Sprint Planning · insumos</p>
+  <h2>Qué entra y qué sale de la Sprint Planning</h2>
+  <div style="position:relative;height:440px;margin-top:16px">
+    <svg width="1136" height="440" style="position:absolute;inset:0" aria-hidden="true"><g stroke="#9BBCF5" stroke-width="2.5" fill="none" class="draw"><path d="M300 60 C 380 60, 380 220, 440 220"/><path d="M300 165 C 380 165, 380 220, 440 220"/><path d="M300 270 C 380 270, 380 220, 440 220"/><path d="M300 375 C 380 375, 380 220, 440 220"/><path d="M700 220 C 760 220, 760 90, 830 90"/><path d="M700 220 L830 220"/><path d="M700 220 C 760 220, 760 350, 830 350"/></g></svg>
+    <div class="box b-blue anim" style="left:0;top:22px;width:300px;height:76px">Product Backlog refinado<small>cumple la DoR</small></div>
+    <div class="box b-blue anim" style="left:0;top:127px;width:300px;height:76px">Increment anterior<small>v0.1.0</small></div>
+    <div class="box b-blue anim" style="left:0;top:232px;width:300px;height:76px">Capacidad del equipo<small>personas × días × foco</small></div>
+    <div class="box b-blue anim" style="left:0;top:337px;width:300px;height:76px">Desempeño pasado · DoD<small>velocidad · calidad exigida</small></div>
+    <div class="box b-amber anim" style="left:440px;top:160px;width:260px;height:120px;border-width:3.5px">Sprint Planning<small>todo el Scrum Team</small></div>
+    <div class="box b-green anim" style="left:830px;top:50px;width:306px;height:80px">Objetivo del Sprint<small>por qué</small></div>
+    <div class="box b-green anim" style="left:830px;top:180px;width:306px;height:80px">Elementos seleccionados<small>qué · Milestone en GitLab</small></div>
+    <div class="box b-green anim" style="left:830px;top:310px;width:306px;height:80px">Plan de tareas<small>cómo · ≤ 1 día cada una</small></div>
+  </div>
+  <aside class="notes">⏱ 2 min. Los insumos salen de la Guía: los Developers seleccionan mejor cuanto más saben de su desempeño pasado, su capacidad y su DoD. En el Sprint 1 no hay desempeño pasado: por eso la capacidad se calcula a mano en la siguiente diapositiva.</aside>
+</section>
+
+<section class="slide" data-title="Capacidad del equipo">
+  <p class="eyebrow">Sprint Planning · capacidad</p>
+  <h2>¿Cuánto cabe en el Sprint de tu equipo?</h2>
+  <div class="calc mt2 anim">
+    <div><label for="cPeople">Integrantes</label><input id="cPeople" type="number" min="1" max="6" value="4"></div>
+    <div><label for="cDays">Días hábiles</label><input id="cDays" type="number" min="1" max="20" value="10"></div>
+    <div><label for="cHours">Horas de foco por día</label><input id="cHours" type="number" min="0.5" max="8" step="0.5" value="3"></div>
+    <div><label for="cSp">Horas por SP</label><input id="cSp" type="number" min="1" max="12" value="4"></div>
+  </div>
+  <div class="row mt2" style="gap:56px;align-items:flex-end">
+    <div class="anim"><div class="kpi" id="cOutH">120</div><small class="muted">horas disponibles</small></div>
+    <div class="anim"><div class="kpi" id="cOutR">108</div><small class="muted">menos 10 % de refinamiento</small></div>
+    <div class="anim"><div class="kpi" id="cOutSp" style="color:var(--blue)">27</div><small class="muted">SP de capacidad</small></div>
+  </div>
+  <div class="callout mt2 anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>Equipo D con <b>3 integrantes efectivos</b>: cambia el primer valor a 3 y mira cuánto baja. El plan se ajusta al equipo real, no a la nómina.</span></div>
+  <aside class="notes">⏱ 3 min. La calculadora funciona: cambia los valores en vivo con los datos de cada equipo. Con 4 personas, 10 días, 3 h y 4 h por SP salen 27 SP; con 3 personas, unos 20. Usa la cifra para justificar los 24 SP del Sprint 1 de users-module.</aside>
+</section>
+
+<section class="slide" data-title="Sprint 1 de users-module">
+  <p class="eyebrow">Ejemplo guiado · Sprint Backlog</p>
+  <h2>Sprint 1 de users-module (12 al 23 de octubre)</h2>
+  <div class="card outline bluec mt anim"><h4>Objetivo del Sprint</h4><p style="font-size:21px">Los cuatro equipos pueden validar identidad y rol contra el <code>UserService</code> real, incluido MERCHANT, en lugar de sus mocks.</p></div>
+  <div class="grid2 mt" style="grid-template-columns:1fr 1fr">
+    <table class="t anim">
+      <tr><th>Elemento seleccionado</th><th class="num">SP</th></tr>
+      <tr><td>HU-13a Rol MERCHANT</td><td class="num">2</td></tr>
+      <tr><td>HU-13b Restringir el alta de ADMIN</td><td class="num">3</td></tr>
+      <tr><td>HU-19/20 UserService + validar usuario</td><td class="num">8</td></tr>
+      <tr><td>HU-21 Datos básicos</td><td class="num">2</td></tr>
+      <tr><td>HU-23 Usuarios de prueba</td><td class="num">1</td></tr>
+      <tr><td>HU-06 Validación de registro</td><td class="num">3</td></tr>
+      <tr><td>HU-01 Ajustes del registro</td><td class="num">5</td></tr>
+      <tr class="hl"><td><b>Total</b></td><td class="num">24</td></tr>
+    </table>
+    <div class="card anim"><h4>Plan de HU-20 · tareas ≤ 1 día</h4>
+      <ul class="clean check" style="font-size:16px"><li>Definir <code>UserService</code> y los records del contrato</li><li><code>ValidateUserUseCase</code> + prueba en memoria</li><li>Adaptador que implementa <code>UserService</code></li><li>Registrar el bean en <code>UserModuleConfiguration</code></li><li>Documentar el contrato para los equipos (RF-1.22)</li></ul></div>
+  </div>
+  <aside class="notes">⏱ 3 min. Fíjate que el Objetivo del Sprint describe un resultado para otros equipos, no una lista de historias. Si a mitad del Sprint HU-01 se complica, se negocia con el PO sin poner en riesgo el objetivo. Eso es la flexibilidad que da la Guía.</aside>
+</section>
+
+<section class="slide" data-title="Objetivos SMART">
+  <p class="eyebrow">Planificación · método SMART</p>
+  <h2>Un objetivo que se puede verificar</h2>
+  <div class="grid3 mt" style="grid-template-columns:repeat(5,1fr);gap:14px">
+    <div class="card outline bluec anim" style="text-align:center;--c:#1F4FD8"><div class="letter">S</div><h4>Específico</h4><p>Cualquiera que lo lea sabe qué se hará y cómo.</p></div>
+    <div class="card outline tealc anim" style="text-align:center"><div class="letter">M</div><h4>Medible</h4><p>Tiene indicadores para evaluar si se logró.</p></div>
+    <div class="card outline violetc anim" style="text-align:center;--c:#7C3AED"><div class="letter">A</div><h4>Alcanzable</h4><p>Ambicioso pero posible; se reajusta si cambia el entorno.</p></div>
+    <div class="card outline amberc anim" style="text-align:center"><div class="letter">R</div><h4>Relevante</h4><p>Tiene un efecto significativo en el proyecto.</p></div>
+    <div class="card outline redc anim" style="text-align:center;--c:#BE123C"><div class="letter">T</div><h4>Temporal</h4><p>Ni tan corto que sea imposible, ni tan largo que se disperse.</p></div>
+  </div>
+  <div class="callout mt2 anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>Definir objetivos dirige las acciones y el esfuerzo hacia lo que se quiere conseguir, y permite <b>darles seguimiento</b>.</span></div>
+  <aside class="notes">⏱ 3 min. Definiciones de la guía SMART del Centro de Apoyo al Desempeño Académico (UDD). En la segunda página la R aparece como "Realista": un objetivo puede ser alcanzable pero no realista si no se fundamenta en la realidad del equipo.</aside>
+</section>
+
+<section class="slide" data-title="Preguntas SMART">
+  <p class="eyebrow">Planificación · preguntas guía</p>
+  <h2>Preguntas para escribir un objetivo SMART</h2>
+  <div class="grid3 mt">
+    <div class="card tag bluec anim"><h4>S · Específico</h4><p>¿Qué quiero lograr exactamente? ¿Quién está involucrado? ¿En qué plazo? ¿Qué beneficios obtendré?</p></div>
+    <div class="card tag tealc anim"><h4>M · Medible</h4><p>¿Con qué indicadores sabremos si se logró? Define el método de medición.</p></div>
+    <div class="card tag violetc anim"><h4>A · Alcanzable</h4><p>¿Tengo las habilidades necesarias? Si no, ¿puedo desarrollarlas? ¿Cómo?</p></div>
+    <div class="card tag amberc anim"><h4>R · Realista</h4><p>¿Es realista según el tipo y la extensión del contenido? ¿Considera mis puntos débiles?</p></div>
+    <div class="card tag redc anim"><h4>T · Tiempo</h4><p>¿Cuál es el plazo concreto? ¿No es ni demasiado corto ni demasiado largo?</p></div>
+    <div class="card outline greenc anim"><h4>En el capstone</h4><p>El plazo natural es el fin del Sprint; el indicador natural es la DoD.</p></div>
+  </div>
+  <aside class="notes">⏱ 2 min. Preguntas tomadas de la guía SMART. La última tarjeta conecta con lo que viene: si la DoD está bien definida, "terminado según la DoD" es el mejor indicador medible del Objetivo del Sprint.</aside>
+</section>
+
+<section class="slide" data-title="SMART en Scrum">
+  <p class="eyebrow">Planificación · SMART en Scrum</p>
+  <h2>Dónde ayuda SMART y dónde hay que tener cuidado</h2>
+  <div class="grid2 mt">
+    <div class="card outline greenc anim"><h4>Ayuda en…</h4><ul class="clean" style="font-size:18px;--c:var(--green)"><li>Mejoras de la Retrospective: "reducir de 3 a 1 los MR rechazados por pipeline en el Sprint 2"</li><li>Metas de aprendizaje del equipo o del Scrum Master</li><li>Hacer verificable el Objetivo del Sprint</li><li>Historias de usuario con criterios medibles</li></ul></div>
+    <div class="card outline redc anim"><h4>Cuidado con…</h4><ul class="clean" style="font-size:18px;--c:var(--red)"><li>Convertir el Objetivo del Sprint en una lista fija de tareas: la Guía le da flexibilidad sobre el trabajo exacto</li><li>Medir actividad ("40 commits") en lugar de resultado</li><li>Fijar todo al inicio en trabajo complejo, donde se aprende sobre la marcha</li></ul></div>
+  </div>
+  <div class="callout mt anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>Que el <b>resultado</b> sea SMART, no la lista de tareas: el qué exacto se puede renegociar con el PO durante el Sprint.</span></div>
+  <aside class="notes">⏱ 3 min. Varias fuentes de la lista de lecturas (Scrum.org, wibas, Scrum Manager) coinciden en este matiz: SMART funciona para metas de mejora y para hacer verificable un objetivo, pero en trabajo complejo hay que medir resultados y dejar espacio para aprender. La Guía dice que el Objetivo del Sprint da flexibilidad sobre el trabajo exacto necesario para lograrlo.</aside>
+</section>
+
+<section class="slide" data-title="De vago a SMART">
+  <p class="eyebrow">Planificación · ejemplos por equipo</p>
+  <h2>De objetivo vago a objetivo SMART</h2>
+  <table class="t mt">
+    <tr><th>Equipo</th><th>Vago</th><th>SMART · Sprint 1</th></tr>
+    <tr class="anim"><td><b>C · catalog</b></td><td class="muted">Avanzar el catálogo</td><td>Al 23 de octubre, FUN-001 y FUN-002 integrados en main, con pruebas contra el adaptador en memoria y el pipeline en verde.</td></tr>
+    <tr class="anim"><td><b>B · order</b></td><td class="muted">Hacer el carrito</td><td>Al 23 de octubre, un cliente válido según el mock de <code>UserService</code> agrega, cambia y quita productos y ve subtotal y total (FUN-001).</td></tr>
+    <tr class="anim"><td><b>A · delivery</b></td><td class="muted">Empezar repartidores</td><td>Al 23 de octubre, se registra un repartidor con medio de transporte y cambia su disponibilidad (FUN-001), validado contra el mock de <code>UserService</code>.</td></tr>
+    <tr class="anim"><td><b>D · payment</b></td><td class="muted">Ver lo de pagos</td><td>Al 23 de octubre, un pago simulado devuelve Aprobado o Rechazado según un monto máximo documentado y rechaza montos ≤ 0 (FUN-002).</td></tr>
+  </table>
+  <aside class="notes">⏱ 3 min. Cada objetivo usa requerimientos reales de las épicas. Pide a cada equipo que, en dos minutos, escriba el suyo y lo pegue en la descripción del Milestone del Sprint 1 en GitLab.</aside>
+</section>
+
+<section class="slide dyn" data-activity="a10" data-title="Dinámica · SMART"></section>
+
+<section class="slide" data-title="Definición de Terminado">
+  <p class="eyebrow">Guía Scrum 2020 · Definición de Terminado</p>
+  <h2>DoD: el compromiso del Increment</h2>
+  <div class="side" style="grid-template-columns:1fr 400px">
+    <div class="col">
+      <p class="lead anim">Es la descripción formal del estado del Increment cuando cumple las medidas de calidad del producto. <b>En el momento en que un elemento cumple la DoD, nace un Increment.</b></p>
+      <div class="grid2 mt">
+        <div class="card tag redc anim"><h4>Si no cumple</h4><p>No se publica ni se presenta en la Sprint Review: vuelve al Product Backlog.</p></div>
+        <div class="card tag bluec anim"><h4>Varios equipos</h4><p>Si trabajan en el mismo producto, definen y cumplen la misma DoD.</p></div>
+        <div class="card tag tealc anim"><h4>Organización</h4><p>Si la organización tiene un estándar, es el mínimo para todos.</p></div>
+        <div class="card tag amberc anim"><h4>Developers</h4><p>Deben adherirse a ella; la calidad no disminuye durante el Sprint.</p></div>
+      </div>
+    </div>
+    <div class="card anim" style="background:#F4F7FC;border:none;padding:22px"><h4>Por qué existe</h4><p style="font-size:17px">Crea transparencia: todos comparten el mismo entendimiento de qué trabajo se completó como parte del Increment.</p><div class="kpi mt" style="font-size:40px">1 DoD</div><small class="muted">para los cuatro equipos del capstone</small></div>
+  </div>
+  <aside class="notes">⏱ 3 min. Todo lo de esta diapositiva viene de la Guía 2020. Lo importante para el capstone: como los cuatro equipos construyen un solo producto, deben acordar una sola DoD. Hoy la vamos a construir.</aside>
+</section>
+
+<section class="slide" data-title="DoD en la práctica">
+  <p class="eyebrow">Investigación · Guðbjörnsson (2016)</p>
+  <h2>¿Quién define y quién hace cumplir la DoD?</h2>
+  <p class="anim small muted mt1">Entrevistas semiestructuradas de 45 a 65 minutos en Tempo (Islandia) a tres roles de un mismo producto: Product Owner, Scrum Master y Developer.</p>
+  <div class="grid2 mt">
+    <div class="anim"><h3 style="font-size:19px">Responsable de definirla, según cada entrevistado</h3><div id="m1" class="mt1"></div></div>
+    <div class="anim"><h3 style="font-size:19px">Responsable de hacerla cumplir</h3><div id="m2" class="mt1"></div></div>
+  </div>
+  <div class="callout mt anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>Nadie coincidió del todo. Ni siquiera estaban de acuerdo en si la DoD <b>existía</b>: el PO creía que ningún equipo la había definido.</span></div>
+  <aside class="notes">⏱ 4 min. Tablas 2 y 3 de la tesis "Definition of Done in Practice". Al definirla, el PO incluyó a todos; el Developer solo al equipo de desarrollo; el Scrum Master al PO y al equipo. Al hacerla cumplir, PO y Developer señalaron al equipo de desarrollo. Llama la atención que el Scrum Master casi no aparece, aunque la Guía lo hace responsable de que Scrum se entienda.
+Para el capstone: decidimos aquí y ahora quién la define (todo el curso) y quién la hace cumplir (el revisor del MR).</aside>
+</section>
+
+<section class="slide" data-title="Hallazgos de la tesis">
+  <p class="eyebrow">Investigación · hallazgos</p>
+  <h2>Cómo se ve una DoD que sí se usa</h2>
+  <div class="grid2 mt" style="grid-template-columns:1fr 1fr">
+    <div class="col">
+      <div class="card tag greenc anim"><h4>No demasiado complicada</h4><p>Si es compleja, falla en la implementación.</p></div>
+      <div class="card tag greenc anim"><h4>Ni muy ardua ni muy relajada</h4><p>Exigente sin elementos imposibles, pero con efecto real en la calidad.</p></div>
+      <div class="card tag greenc anim"><h4>5 a 7 elementos</h4><p>Y revisada con regularidad: crece a medida que el equipo madura.</p></div>
+    </div>
+    <div class="col">
+      <div class="card tag redc anim"><h4>Bajo presión</h4><p>Con poco tiempo, la DoD es de lo primero que se salta, y a veces se abandona por completo.</p></div>
+      <div class="card tag amberc anim"><h4>Entregas poco frecuentes</h4><p>Si se entrega poco, la retroalimentación sobre lo "terminado" llega demasiado tarde.</p></div>
+      <div class="card tag bluec anim"><h4>Lo que esperaban ganar</h4><p>Menos bugs, más confianza al publicar, menos fricción y que cada uno sepa qué se espera de él.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. Hallazgos de la sección de resultados de la tesis, en paráfrasis. La de la presión es la más relevante para el capstone: la semana antes de cada tag hay presión, y es cuando más tentación habrá de saltarse la DoD. El acuerdo es que el pipeline en rojo bloquea el merge, sin excepciones.</aside>
+</section>
+
+<section class="slide" data-title="DoR, criterios y DoD">
+  <p class="eyebrow">Comparación</p>
+  <h2>Tres listas que se confunden</h2>
+  <table class="t mt">
+    <tr><th></th><th>DoR · Definición de Listo</th><th>Criterios de aceptación</th><th>DoD · Definición de Terminado</th></tr>
+    <tr class="anim"><td><b>Pregunta</b></td><td>¿Puede entrar al Sprint?</td><td>¿Hace lo que el negocio pidió?</td><td>¿Tiene la calidad del producto?</td></tr>
+    <tr class="anim"><td><b>Alcance</b></td><td>Cada historia</td><td>Una historia concreta</td><td>Todo el Increment</td></tr>
+    <tr class="anim"><td><b>Quién la escribe</b></td><td>Scrum Team</td><td>PO con los Developers</td><td>Scrum Team · los 4 equipos</td></tr>
+    <tr class="anim"><td><b>¿En la Guía?</b></td><td>No (práctica)</td><td>No (práctica)</td><td>Sí, es un compromiso</td></tr>
+    <tr class="anim"><td><b>Ejemplo</b></td><td>Tiene Weight y mocks identificados</td><td>Un comercio Deshabilitado no lista productos</td><td><code>./mvnw clean install</code> pasa</td></tr>
+  </table>
+  <div class="callout mt2 anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>Prueba rápida: <b>¿aplica a todas las historias?</b> Entonces es DoD. ¿Solo a esta? Es criterio de aceptación.</span></div>
+  <aside class="notes">⏱ 3 min. Esta comparación prepara la dinámica de cierre. El error más común es meter criterios de aceptación en la DoD y terminar con una DoD de 30 puntos que nadie cumple.</aside>
+</section>
+
+<section class="slide" data-title="DoD del capstone">
+  <p class="eyebrow">Capstone · propuesta de DoD común</p>
+  <h2>Una DoD para los cuatro módulos</h2>
+  <div class="grid2 mt" style="grid-template-columns:1.3fr 1fr">
+    <div class="card anim" style="padding:20px 24px">
+      <ul class="clean check" style="font-size:18px">
+        <li data-step="1"><span><b>Compila</b>: <code>./mvnw clean install</code> del módulo pasa</span></li>
+        <li data-step="2"><span><b>Caso de uso probado</b> contra el adaptador en memoria</span></li>
+        <li data-step="3"><span><b>Persistencia probada</b>: adaptador JPA con H2 y la migración Flyway real</span></li>
+        <li data-step="4"><span><b>Vistas</b>: cada FXML existe en el classpath</span></li>
+        <li data-step="5"><span><b>Arquitectura</b>: sin dependencias a otros módulos de negocio; solo DTOs del contrato</span></li>
+        <li data-step="6"><span><b>MR revisado</b> y aprobado por otro integrante, con el issue enlazado</span></li>
+        <li data-step="7"><span><b>Pipeline en verde</b> en el job <code>build-*</code> del módulo</span></li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="card tag bluec anim"><h4>Sale del README</h4><p>Cada punto es una convención que el repositorio ya exige: pruebas, adaptadores, CI.</p></div>
+      <div class="card tag amberc anim"><h4>Siete puntos</h4><p>Dentro del rango de 5 a 7 que recomienda la tesis.</p></div>
+      <div class="card tag greenc anim"><h4>Se revisa</h4><p>En cada Retrospective; la v0.3.0 puede agregar pruebas de integración entre módulos.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 5 min. Avanza punto por punto (siete pasos). Para cada uno, pregunta si alguien lo objeta y vota rápido a mano alzada. La DoD acordada se publica en el README del repositorio y se enlaza desde la plantilla del MR. Quien revisa el MR es quien la hace cumplir.</aside>
+</section>
+
+<section class="slide dyn" data-activity="a11" data-title="Dinámica · DoR, DoD o criterio"></section>
+
+<!-- ---------- SECCIÓN 5 ---------- -->
+<section class="slide divider" data-title="05 · Seguimiento" data-section="5">
+  <span class="sess">Sesión 2</span>
+  <div class="num anim">05</div>
+  <div class="dtitle"><p class="eyebrow">Sección 5</p><h2 class="anim">Seguimiento del progreso</h2><p class="anim">Transparencia, inspección y adaptación con el tablero de GitLab, el burndown, el burnup y la velocidad.</p></div>
+  <aside class="notes">⏱ 30 min para toda la sección.</aside>
+</section>
+
+<section class="slide dyn" data-activity="a12" data-title="Dinámica · ¿Tu tablero dice la verdad?"></section>
+
+<section class="slide" data-title="Empirismo y cadencia">
+  <p class="eyebrow">Guía Scrum 2020 · empirismo</p>
+  <h2>Un Sprint de 2 semanas, inspeccionado todos los días</h2>
+  <div class="chart mt anim" data-chart="cadence" style="height:220px"></div>
+  <div class="grid3 mt">
+    <div class="card tag bluec anim"><h4>Transparencia</h4><p>El trabajo es visible para quien lo hace y para quien lo recibe: tablero actualizado.</p></div>
+    <div class="card tag amberc anim"><h4>Inspección</h4><p>Frecuente y diligente: cada Daily y cada Review.</p></div>
+    <div class="card tag greenc anim"><h4>Adaptación</h4><p>Ajustar lo antes posible cuando algo se desvía.</p></div>
+  </div>
+  <aside class="notes">⏱ 3 min. La línea muestra el Sprint 1 (12 al 23 de octubre) con sus eventos y timeboxes: Planning, una Daily de 15 min cada día hábil, Review y Retrospective. Para un Sprint de dos semanas la Review y la Retro son proporcionalmente más cortas que las 4 h y 3 h del Sprint de un mes. Recuerda: la inspección sin transparencia es engañosa.</aside>
+</section>
+
+<section class="slide" data-title="Tablero de GitLab">
+  <p class="eyebrow">Seguimiento · tablero</p>
+  <h2>El tablero de GitLab, en movimiento</h2>
+  <div class="kanban anim" id="kanban">
+    <div class="kcol"><h5>Open</h5></div>
+    <div class="kcol"><h5>workflow::ready</h5></div>
+    <div class="kcol"><h5>workflow::doing</h5></div>
+    <div class="kcol"><h5>workflow::review</h5></div>
+    <div class="kcol"><h5>Closed</h5></div>
+  </div>
+  <aside class="notes">⏱ 3 min. Animación: las tarjetas avanzan al pulsar → (hay varios pasos). Cada columna es un label de flujo. Regla del capstone: una tarjeta solo llega a Closed cuando el MR se integró cumpliendo la DoD. Limita el trabajo en progreso: si una persona tiene tres tarjetas en doing, nada se termina.</aside>
+</section>
+
+<section class="slide" data-title="Burndown">
+  <p class="eyebrow">Seguimiento · burndown</p>
+  <h2>Burndown del Sprint 1 de users-module</h2>
+  <div class="side" style="grid-template-columns:1fr 330px">
+    <div><div class="chart anim" data-chart="burndown" style="height:400px"></div>
+    <div class="legend"><span><i style="background:#98A2B3"></i>Ideal</span><span><i style="background:#2F6FE4"></i>Real · SP restantes</span></div></div>
+    <div class="col">
+      <div class="card tag amberc anim"><h4>Días 1 y 3</h4><p>Mesetas: se trabajó, pero nada cumplió la DoD todavía.</p></div>
+      <div class="card tag greenc anim"><h4>Días 6 a 9</h4><p>Bajadas fuertes: cierran HU-20 y HU-01.</p></div>
+      <div class="card tag bluec anim"><h4>Cómo se lee</h4><p>Solo baja cuando una historia está <b>terminada</b>, no "al 80 %".</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. Datos ilustrativos para el Sprint 1 de 24 SP. La línea real sobre la ideal no es un problema en sí: es una conversación para la Daily. GitLab genera este gráfico en el Milestone a partir del Weight de los issues cerrados.</aside>
+</section>
+
+<section class="slide" data-title="Burnup">
+  <p class="eyebrow">Seguimiento · burnup</p>
+  <h2>Burnup: el alcance que cambió</h2>
+  <div class="side" style="grid-template-columns:1fr 330px">
+    <div><div class="chart anim" data-chart="burnup" style="height:400px"></div>
+    <div class="legend"><span><i style="background:#C2410C"></i>Alcance total</span><span><i style="background:#15803D"></i>Completado</span></div></div>
+    <div class="col">
+      <div class="card tag redc anim"><h4>Día 5</h4><p>El PO decide reemplazar DeleteUser por inactivar: entran 3 SP.</p></div>
+      <div class="card tag bluec anim"><h4>Por qué burnup</h4><p>En un burndown ese cambio parecería que el equipo "retrocedió". Aquí se ve separado.</p></div>
+      <div class="card tag greenc anim"><h4>Final</h4><p>24 de 27 SP: HU-11 vuelve al Product Backlog.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. El burnup separa dos preguntas: cuánto avanzamos y cuánto cambió el alcance. La historia que no cumple la DoD al final vuelve al Product Backlog, como dice la Guía: no se presenta "casi terminada".</aside>
+</section>
+
+<section class="slide" data-title="Velocidad">
+  <p class="eyebrow">Seguimiento · velocidad</p>
+  <h2>La velocidad real reemplaza la supuesta</h2>
+  <div class="side" style="grid-template-columns:1fr 360px">
+    <div><div class="chart anim" data-chart="velocity" style="height:360px"></div>
+    <div class="legend"><span><i style="background:#9BBCF5"></i>Comprometido</span><span><i style="background:#2F6FE4"></i>Terminado</span><span class="muted">SP · ejemplo ilustrativo</span></div></div>
+    <div class="col">
+      <div class="card tag bluec anim"><h4>Pronóstico</h4><p>Con 21 y 24 SP terminados, el Sprint 3 se planea alrededor de 22–24, no 26.</p></div>
+      <div class="card outline amberc anim"><h4>La Guía advierte</h4><p>Burndowns, burnups y flujos acumulados son útiles, pero no reemplazan el empirismo: solo lo que ya pasó sirve para decidir.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 3 min. Ejemplo ilustrativo de tres Sprints. La velocidad es del equipo y no se compara entre equipos: los puntos del Equipo C no valen lo mismo que los del Equipo B. Cita de la Guía en paráfrasis: estas prácticas de pronóstico no reemplazan la importancia del empirismo.</aside>
+</section>
+
+<section class="slide" data-title="Señales del burndown">
+  <p class="eyebrow">Seguimiento · señales</p>
+  <h2>Cuatro formas típicas y qué conversar</h2>
+  <div class="grid2 mt" style="gap:18px 28px">
+    <div class="card anim"><div class="chart" data-chart="sig1" style="height:150px"></div><h4 class="mt1">Precipicio al final</h4><p>Historias grandes o tablero desactualizado. Dividir más y mover tarjetas a diario.</p></div>
+    <div class="card anim"><div class="chart" data-chart="sig2" style="height:150px"></div><h4 class="mt1">Sube a mitad del Sprint</h4><p>Entró alcance. ¿Lo negoció el PO? ¿Pone en riesgo el Objetivo?</p></div>
+    <div class="card anim"><div class="chart" data-chart="sig3" style="height:150px"></div><h4 class="mt1">Termina en el día 6</h4><p>Sobreestimación. Tomar más del backlog o refinar mejor.</p></div>
+    <div class="card anim"><div class="chart" data-chart="sig4" style="height:150px"></div><h4 class="mt1">Plano y nunca llega a cero</h4><p>Bloqueo o compromiso excesivo. Llevarlo a la Retrospective.</p></div>
+  </div>
+  <aside class="notes">⏱ 3 min. Galería para preparar la dinámica final. Ninguna forma "acusa" a nadie: cada una abre una conversación concreta.</aside>
+</section>
+
+<section class="slide" data-title="Daily Scrum del capstone">
+  <p class="eyebrow">Seguimiento · Daily Scrum</p>
+  <h2>Una Daily de 15 minutos centrada en el Objetivo</h2>
+  <div class="grid2 mt">
+    <div class="card outline bluec anim"><h4>Lo que dice la Guía</h4><ul class="clean" style="font-size:18px"><li>15 minutos, para los Developers, mismo lugar y hora</li><li>Inspecciona el progreso hacia el Objetivo del Sprint</li><li>Produce un plan para el siguiente día</li><li>La estructura la eligen los Developers: la Guía 2020 quitó las tres preguntas</li></ul></div>
+    <div class="card outline amberc anim"><h4>Formato sugerido para el capstone</h4><ul class="clean" style="font-size:18px;--c:var(--amber)"><li>Abrir el tablero, de derecha a izquierda: primero lo que está en review</li><li>Mirar el burndown: ¿llegamos al Objetivo?</li><li>Nombrar bloqueos y dependencias con otros equipos</li><li>Conversaciones técnicas: después, con quien corresponda</li></ul></div>
+  </div>
+  <div class="callout mt anim"><svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg><span>Recorrer el tablero de <b>derecha a izquierda</b> prioriza terminar sobre empezar.</span></div>
+  <aside class="notes">⏱ 3 min. En un curso la Daily puede ser asíncrona: un hilo diario en el canal del equipo con el estado del tablero. Lo que no puede faltar es la pregunta por el Objetivo del Sprint.</aside>
+</section>
+
+<section class="slide dyn" data-activity="a13" data-title="Dinámica · Lee el burndown"></section>
+
+<section class="slide" data-title="Cierre de la semana">
+  <p class="eyebrow">Cierre · Semana 3</p>
+  <h2>Entregable y siguientes hitos</h2>
+  <div class="grid2 mt">
+    <div class="card anim" style="padding:20px 24px"><h4 style="font-size:21px">Al cierre de la semana</h4>
+      <ul class="clean check mt1" style="font-size:18px"><li>Milestone "Sprint 1" con el Objetivo SMART en la descripción</li><li>Historias del Sprint 1 con Weight y tareas de ≤ 1 día</li><li>DoD común publicada en el README y en la plantilla del MR</li><li>Tablero con labels <code>workflow::</code> actualizado a diario</li><li>Plantilla completa: roadmap, Gantt y casos de uso en <code>requirements/</code></li></ul></div>
+    <div class="col">
+      <div class="chart anim" data-chart="timeline2" style="height:170px"></div>
+      <div class="card tag amberc anim"><h4>Semana 4 · v0.2.0</h4><p>Sprint Review del Sprint 1: cada equipo muestra su Increment funcionando contra <code>UserService</code> o sus mocks.</p></div>
+      <div class="card tag greenc anim"><h4>Practica y revisa el ranking</h4><p>Las 13 dinámicas siguen abiertas en la web.</p></div>
+    </div>
+  </div>
+  <aside class="notes">⏱ 4 min. Cierra con el ranking final por equipo desde la consola del docente. Recuerda que la Sprint Review de la semana 4 es una sesión de trabajo, no solo una presentación.</aside>
+</section>
+
+<section class="slide" data-title="Referencias">
+  <p class="eyebrow">Fuentes</p>
+  <h2>Referencias y lecturas</h2>
+  <div class="grid2 mt" style="font-size:14px;line-height:1.5;gap:10px 32px">
+    <div><b>Material del curso</b><br>Schwaber, K. y Sutherland, J. (2020). <i>La Guía de Scrum</i>.<br>Guðbjörnsson, B. G. (2016). <i>Definition of Done in Practice</i>. Reykjavik University.<br>Govil, N. y Sharma, A. (2023). Development of the Cost and Time Estimation Factors of the Project Dimension in the Agile Software. <i>Iraqi Journal of Science</i>, 64(12), 6522–6533.<br>Adnan, M. y Afzal, M. (2017). Ontology Based Multiagent Effort Estimation System for Scrum Agile Method. <i>IEEE Access</i>, 5, 25993–26005.<br>CADA UDD. <i>Guía para definir objetivos basada en el método SMART</i>.<br>Requerimientos del Módulo de Usuarios y Agile Requirements Delivery System. Jala University.</div>
+    <div><b>Lecturas recomendadas</b><br>DoD: agile-academy.com · scrum.org "Getting started with Definition of Done"<br>SMART: wibas.com · scrum.org "When are SMART goals not so smart" · scrummanager.com · visual-paradigm.com · asana.com · accomexico.com<br>INVEST: visual-paradigm.com "3C and INVEST" · boost.co.nz · scrummanager.com · scrum-master.org<br>Refinamiento: agilisters.org · scrumplop.org · Scrum Alliance · scrumio.com · scrum.org "¿Qué es el refinamiento del backlog?" · visual-paradigm.com<br>Backlog: scrum-institute.org · devits.io · donetonic.com (burndown) · fracttal.com</div>
+  </div>
+  <aside class="notes">Las URL completas están en la web del curso, sección Resumen.</aside>
+</section>
+
+</div></div>
+
+<div id="hud" aria-label="Controles">
+  <button id="bPrev" title="Anterior (←)">←</button>
+  <button id="bNext" title="Siguiente (→)">→</button>
+  <button id="bMenu" title="Índice (M)">Índice</button>
+  <button id="bNotes" title="Notas (N)">Notas</button>
+  <button id="bPres" title="Vista del presentador (P)">Presentador</button>
+  <button id="bFull" title="Pantalla completa (F)">⛶</button>
+</div>
+<div id="notesPanel" aria-live="polite"><h6>Notas del presentador</h6><div id="notesText"></div></div>
+<div id="menu" role="dialog" aria-label="Índice"><div id="menuList"></div></div>
+<div id="pv"><div class="clock" id="pvClock">00:00</div><div id="pvPos" class="next"></div><div class="next">Siguiente: <b id="pvNext"></b></div><div class="pnotes" id="pvNotes"></div><button id="pvReset" style="align-self:flex-start;font:700 13px var(--f-body);background:#22304D;color:#E6EDFF;border:1px solid #3B4D74;border-radius:8px;padding:8px 12px">Reiniciar reloj</button></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="activities.js"></script>
+<script>
+(function(){
+  const D = window.DS2;
+  const G = window.gsap || null;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const canvas = document.getElementById('canvas');
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const BULB = '<svg class="bulb" viewBox="0 0 24 24" fill="#F7D66B"><path d="M9 21h6v-1H9v1zm3-20a7 7 0 0 0-4 12.7V17h8v-3.3A7 7 0 0 0 12 1z"/></svg>';
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* URL de la web interactiva (misma carpeta en GitHub Pages) */
+  let APP_URL = 'index.html';
+  try { if (/^https?:/.test(location.protocol)) APP_URL = new URL('index.html', location.href).href.replace(/index\.html$/, ''); } catch(e){}
+
+  /* ---------- Dinámicas generadas desde activities.js ---------- */
+  function fmtTime(steps, t){ const s = steps.length * t; return s >= 60 ? `${Math.floor(s/60)} min${s%60? ' '+(s%60)+' s':''}` : `${s} s`; }
+  function renderDyn(sec){
+    const a = D.activity(sec.dataset.activity); if (!a) return;
+    const moment = {apertura:'Apertura', cierre:'Cierre', juego:'Juego'}[a.moment];
+    let body = '';
+    const s0 = a.steps[0];
+    const allChoice = a.steps.every(s => s.type === 'mcq' || s.type === 'poll');
+    if (allChoice && !a.steps.some(s => s.chart)) {
+      body = '<div class="qlist">' + a.steps.map((s,i) => {
+        const ans = s.type === 'poll' ? '<span class="ans poll" data-step="1">Encuesta · sin respuesta correcta</span>' : `<span class="ans" data-step="1">${esc(s.options[s.correct])}</span>`;
+        const opts = (a.steps.length <= 3) ? '<div class="opts">' + s.options.map(o=>`<span>${esc(o)}</span>`).join('') + '</div>' : '';
+        return `<div class="qrow"><div class="q">${i+1}. ${esc(s.prompt)}${opts}</div>${ans}</div>`;
+      }).join('') + '</div>';
+    } else if (a.steps.some(s => s.chart)) {
+      body = '<div class="grid2" style="grid-template-columns:repeat(' + Math.min(a.steps.length,4) + ',1fr);gap:14px">' + a.steps.map((s,i)=>{
+        const ch = s.chart ? `<div class="chart minichart" data-mini="${s.chart.join(',')}"></div>` : '';
+        return `<div class="qrow" style="flex-direction:column;align-items:stretch"><div>${i+1}. ${esc(s.prompt)}</div>${ch}<span class="ans" data-step="1" style="max-width:none;text-align:left">${esc(s.options[s.correct])}</span></div>`;
+      }).join('') + '</div>';
+    } else {
+      body = a.steps.map((s, si) => {
+        if (s.type === 'classify') {
+          const cats = '<div class="cats"><span class="lbl">Categorías:</span>' + s.categories.map((c,i)=>`<span class="pill pc${i}">${esc(c)}</span>`).join('') + '</div>';
+          return cats + '<div class="citems">' + s.items.map(it => `<div class="citem"><span>${esc(it.text)}</span><span class="pill pc${it.cat}" data-step="1">${esc(s.categories[it.cat])}</span></div>`).join('') + '</div>';
+        }
+        if (s.type === 'order') {
+          const order = s.items.map((t,i)=>({t,i}));
+          const shuffled = [3,0,5,1,4,2].filter(i => i < order.length).concat(order.map((_,i)=>i).filter(i => i>=6));
+          return `<p style="font-weight:900;margin:${si? '18px':'0'} 0 10px">${esc(s.prompt)}</p><div class="olist">` + shuffled.map(i => `<div class="oitem"><span class="n" data-step="1">${i+1}</span><span>${esc(order[i].t)}</span></div>`).join('') + '</div>';
+        }
+        if (s.type === 'poker') {
+          return '';
+        }
+        if (s.type === 'mcq' || s.type === 'poll') {
+          return `<div class="qrow" style="margin-top:14px"><div class="q">${esc(s.prompt)}</div><span class="ans" data-step="1">${esc(s.options[s.correct])}</span></div>`;
+        }
+        return '';
+      }).join('');
+      if (s0.type === 'poker') {
+        body = '<div class="pokerbox">' + a.steps.map(s => `<div class="hu">${esc(s.prompt)}</div>`).join('') + '</div><div class="fib">' + s0.options.map(o=>`<span>${esc(o)}</span>`).join('') + '</div>';
+      }
+    }
+    sec.innerHTML = `<p class="eyebrow">Dinámica · ${moment} · Sección ${a.section}</p>
+      <h2>${esc(a.title)}</h2><p class="lead">${esc(a.lead)}</p>
+      <div class="chip"><b>${esc(a.mode)}</b><span>${fmtTime(a.steps, a.time)} · ${a.id} · ${a.steps.length} ${a.steps.length===1?'paso':'pasos'}</span></div>
+      <div class="dynbody">${body}</div>
+      <div class="callout" data-step="1">${BULB}<span>${esc(a.insight)}</span></div>
+      <aside class="notes">⏱ ${fmtTime(a.steps, a.time)} de juego + 2 min de discusión. En la consola del docente lanza la dinámica «${esc(a.title)}» (${a.id}). Pulsa → para revelar las respuestas en esta diapositiva cuando la sala muestre los resultados.\n${esc(a.notes)}</aside>`;
+    sec.dataset.play = '1';
+    if (a.steps.length > 1 && a.steps.some(s => s.type === 'classify' || s.type === 'order')) sec.classList.add('compact');
+  }
+  document.querySelectorAll('.slide.dyn').forEach(renderDyn);
+
+  /* ---------- Pies de página ---------- */
+  slides.forEach((s, i) => {
+    const f = document.createElement('div'); f.className = 'foot';
+    const mid = s.dataset.play ? '<span class="play">Se juega en la web <span>· entren con el código de sala del proyector</span></span>' : '';
+    f.innerHTML = `<span>${esc(D.COURSE.footer)}</span>${mid}<span>${i+1}</span>`;
+    s.appendChild(f);
+  });
+
+  /* ---------- Gráficas SVG a escala ---------- */
+  const NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs, parent){ const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  function frame(el, o){
+    const W = el.clientWidth || o.w || 900, H = el.clientHeight || o.h || 300;
+    const m = Object.assign({l:52, r:16, t:14, b:34}, o.m || {});
+    el.innerHTML = '';
+    const svg = svgEl('svg', {width:W, height:H, viewBox:`0 0 ${W} ${H}`}, el);
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const y = v => m.t + ih - (v - (o.yMin||0)) / (o.yMax - (o.yMin||0)) * ih;
+    if (!o.noGrid) (o.ticks || []).forEach(t => {
+      svgEl('line', {x1:m.l, x2:m.l+iw, y1:y(t), y2:y(t), stroke:'#E5E9F0', 'stroke-width':1}, svg);
+      const tx = svgEl('text', {x:m.l-8, y:y(t)+4, 'text-anchor':'end'}, svg); tx.textContent = o.fmt ? o.fmt(t) : t;
+    });
+    return {svg, W, H, m, iw, ih, y};
+  }
+  function bars(el, o){
+    const f = frame(el, o); const n = o.labels.length, k = o.series.length;
+    const gw = f.iw / n, bw = Math.min(o.bw || 40, (gw * 0.76) / k);
+    o.labels.forEach((lab, i) => {
+      const gx = f.m.l + gw * i + (gw - bw * k) / 2;
+      o.series.forEach((s, j) => {
+        const v = s.values[i]; const yy = f.y(v);
+        const r = svgEl('rect', {x:gx + j*bw, y:yy, width:bw-3, height:f.m.t + f.ih - yy, fill:s.color, rx:3, class:'gbar'}, f.svg);
+        r.dataset.h = f.m.t + f.ih - yy;
+        if (o.valueLabels) { const t = svgEl('text', {x:gx + j*bw + (bw-3)/2, y:yy-6, 'text-anchor':'middle', 'font-weight':700, fill:'#13213F'}, f.svg); t.textContent = o.valueLabels(v); t.style.fill = '#13213F'; }
+      });
+      const t = svgEl('text', {x:f.m.l + gw*i + gw/2, y:f.H - 12, 'text-anchor':'middle'}, f.svg); t.textContent = lab;
+    });
+    (o.thresholds||[]).forEach(th => {
+      svgEl('line', {x1:f.m.l, x2:f.m.l+f.iw, y1:f.y(th.v), y2:f.y(th.v), stroke:'#C2410C', 'stroke-width':2, 'stroke-dasharray':'6 5'}, f.svg);
+      const t = svgEl('text', {x:f.m.l+f.iw, y:f.y(th.v)-6, 'text-anchor':'end', 'font-weight':700}, f.svg); t.textContent = th.label; t.style.fill = '#C2410C';
+    });
+    svgEl('line', {x1:f.m.l, x2:f.m.l+f.iw, y1:f.m.t+f.ih, y2:f.m.t+f.ih, stroke:'#98A2B3'}, f.svg);
+  }
+  function lines(el, o){
+    const f = frame(el, o); const n = o.labels.length;
+    const x = i => f.m.l + (n === 1 ? 0 : f.iw * i / (n - 1));
+    if (!o.noX) o.labels.forEach((lab, i) => { if (o.every && i % o.every) return; const t = svgEl('text', {x:x(i), y:f.H - 12, 'text-anchor':'middle'}, f.svg); t.textContent = lab; });
+    svgEl('line', {x1:f.m.l, x2:f.m.l+f.iw, y1:f.m.t+f.ih, y2:f.m.t+f.ih, stroke:'#98A2B3'}, f.svg);
+    o.series.forEach(s => {
+      const d = s.values.map((v,i) => v == null ? '' : `${i===0||s.values[i-1]==null?'M':'L'}${x(i).toFixed(1)} ${f.y(v).toFixed(1)}`).join(' ');
+      const p = svgEl('path', {d, fill:'none', stroke:s.color, 'stroke-width':s.w || 3, 'stroke-linejoin':'round', 'stroke-linecap':'round'}, f.svg);
+      if (s.dash) p.setAttribute('stroke-dasharray', s.dash); else p.classList.add('gline');
+      if (s.dots) s.values.forEach((v,i) => { if (v != null) svgEl('circle', {cx:x(i), cy:f.y(v), r:4.5, fill:'#fff', stroke:s.color, 'stroke-width':2.5, class:'gdot'}, f.svg); });
+    });
+    (o.marks||[]).forEach(mk => { const t = svgEl('text', {x:x(mk.i), y:f.y(mk.v) - 12, 'text-anchor':'middle', 'font-weight':700}, f.svg); t.textContent = mk.text; t.style.fill = mk.color || '#13213F'; });
+  }
+  function timeline(el, o){
+    const f = frame(el, {yMax:1, noGrid:true, m:{l:20,r:20,t:30,b:40}});
+    const n = 10, x = w => f.m.l + f.iw * (w - 0.5) / n;
+    const yb = f.m.t + 70;
+    svgEl('rect', {x:f.m.l, y:yb-8, width:f.iw, height:16, rx:8, fill:'#EEF1F6'}, f.svg);
+    const prog = svgEl('rect', {x:f.m.l, y:yb-8, width:f.iw * (o.now/ n), height:16, rx:8, fill:'#2F6FE4', class:'gprog'}, f.svg);
+    prog.dataset.w = f.iw * (o.now / n);
+    for (let w = 1; w <= n; w++) {
+      const t = svgEl('text', {x:x(w), y:yb + 40, 'text-anchor':'middle', 'font-weight': w===o.now?900:400}, f.svg); t.textContent = 'S' + w; if (w===o.now) t.style.fill = '#C2410C';
+    }
+    o.tags.forEach(tg => {
+      const xx = f.m.l + f.iw * tg.w / n;
+      svgEl('rect', {x:xx-8, y:yb-8, width:16, height:16, transform:`rotate(45 ${xx} ${yb})`, fill:tg.color}, f.svg);
+      const t = svgEl('text', {x:xx, y:yb - 26, 'text-anchor':'middle', 'font-weight':900, 'font-family':'IBM Plex Mono'}, f.svg); t.textContent = tg.label; t.style.fill = tg.color;
+    });
+    (o.spans||[]).forEach(sp => {
+      const x1 = f.m.l + f.iw * (sp.from - 1) / n, x2 = f.m.l + f.iw * sp.to / n;
+      svgEl('line', {x1:x1+4, x2:x2-4, y1:yb + 62, y2:yb + 62, stroke:sp.color, 'stroke-width':6, 'stroke-linecap':'round'}, f.svg);
+      const t = svgEl('text', {x:(x1+x2)/2, y:yb + 86, 'text-anchor':'middle', 'font-weight':700}, f.svg); t.textContent = sp.label; t.style.fill = sp.color;
+    });
+    const nx = f.m.l + f.iw * (o.now - 0.5) / n;
+    svgEl('line', {x1:nx, x2:nx, y1:yb-24, y2:yb+24, stroke:'#C2410C', 'stroke-width':3}, f.svg);
+  }
+
+  const P = Array.from({length:12}, (_,i)=>'P'+(i+1));
+  const CHARTS = {
+    timeline: el => timeline(el, {now:3, tags:[{w:2,label:'v0.1.0',color:'#2F6FE4'},{w:4,label:'v0.2.0',color:'#B45309'},{w:6,label:'v0.3.0',color:'#B45309'},{w:8,label:'v0.4.0',color:'#B45309'},{w:9,label:'v1.0.0',color:'#15803D'}],
+      spans:[{from:1,to:2,label:'Preparación',color:'#667085'},{from:3,to:4,label:'Sprint 1',color:'#2F6FE4'},{from:5,to:6,label:'Sprint 2',color:'#0F766E'},{from:7,to:8,label:'Sprint 3',color:'#7C3AED'},{from:9,to:9,label:'Cierre',color:'#B45309'},{from:10,to:10,label:'Demo',color:'#15803D'}]}),
+    timeline2: el => timeline(el, {now:3, tags:[{w:4,label:'v0.2.0',color:'#B45309'},{w:9,label:'v1.0.0',color:'#15803D'}], spans:[]}),
+    tet: el => bars(el, {labels:P, yMax:180, ticks:[0,40,80,120,160], series:[
+      {color:'#F2B705', values:[55.52,67.39,51.09,73.24,82.65,128.16,109.03,112.68,118.45,114.17,165.84,163.12]},
+      {color:'#2F6FE4', values:[63.05,73.88,59.63,80.7,87.89,134.46,114.29,117.94,120.38,117.09,168.74,166.03]}], bw:26}),
+    adnan: el => lines(el, {labels:P, yMax:200, yMin:60, ticks:[60,100,140,180], series:[
+      {color:'#F2B705', values:[96,172,136,88,110,124,160,154,128,100,102,144], w:2.5, dots:true},
+      {color:'#16A34A', values:[148,152,128,106,145,107,190,167,120,115,140,135], w:2.5, dots:true},
+      {color:'#2F6FE4', values:[144,160,120,90,126,112,180,140,100,80,132,128], w:3, dots:true},
+      {color:'#C2410C', values:[136,155,112,131,122,148,174,150,122,88,139,134], w:4, dots:true}]}),
+    mmre: el => bars(el, {labels:['Multiagente','Poker','Delphi'], yMax:0.3, ticks:[0,0.1,0.2,0.3], fmt:v=>v.toFixed(1), series:[{color:'#2F6FE4', values:[0.101,0.120,0.153]}], bw:90, valueLabels:v=>v.toFixed(3), thresholds:[{v:0.25,label:'0.25'}], m:{t:24}}),
+    pred: el => bars(el, {labels:['Multiagente','Poker','Delphi'], yMax:1, ticks:[0,0.25,0.5,0.75,1], fmt:v=>v.toFixed(2), series:[{color:'#16A34A', values:[0.91,0.83,0.75]}], bw:90, valueLabels:v=>v.toFixed(2), thresholds:[{v:0.75,label:'0.75'}], m:{t:24}}),
+    burndown: el => lines(el, {labels:Array.from({length:11},(_,i)=>'D'+i), yMax:24, ticks:[0,6,12,18,24], series:[
+      {color:'#98A2B3', values:Array.from({length:11},(_,i)=>24-2.4*i), dash:'7 6', w:2.5},
+      {color:'#2F6FE4', values:[24,24,22,22,19,16,16,11,8,3,0], dots:true}], marks:[{i:1,v:24,text:'meseta',color:'#B45309'},{i:7,v:11,text:'HU-20 ✓',color:'#15803D'}]}),
+    burnup: el => lines(el, {labels:Array.from({length:11},(_,i)=>'D'+i), yMax:30, ticks:[0,10,20,30], series:[
+      {color:'#C2410C', values:[24,24,24,24,24,27,27,27,27,27,27], w:3},
+      {color:'#15803D', values:[0,0,2,2,5,8,8,13,16,21,24], dots:true}], marks:[{i:5,v:27,text:'+3 SP',color:'#C2410C'}]}),
+    velocity: el => bars(el, {labels:['Sprint 1','Sprint 2','Sprint 3'], yMax:30, ticks:[0,10,20,30], series:[{color:'#9BBCF5', values:[24,26,24]},{color:'#2F6FE4', values:[21,24,23]}], bw:70, valueLabels:v=>v, m:{t:24}}),
+    cadence: el => {
+      const f = frame(el, {yMax:1, noGrid:true, m:{l:10,r:10,t:16,b:30}});
+      const days = ['L 12','M 13','M 14','J 15','V 16','L 19','M 20','M 21','J 22','V 23'];
+      const cw = f.iw / 10;
+      days.forEach((d,i) => {
+        const x = f.m.l + cw*i;
+        svgEl('rect', {x:x+3, y:f.m.t, width:cw-6, height:f.ih, rx:8, fill:'#F4F7FC'}, f.svg);
+        const t = svgEl('text', {x:x+cw/2, y:f.H-8, 'text-anchor':'middle', 'font-family':'IBM Plex Mono'}, f.svg); t.textContent = d;
+        const dl = svgEl('rect', {x:x+12, y:f.m.t+70, width:cw-24, height:30, rx:6, fill:'#D5F5EF', stroke:'#0F766E', class:'gpop'}, f.svg);
+        const tt = svgEl('text', {x:x+cw/2, y:f.m.t+90, 'text-anchor':'middle', 'font-weight':700}, f.svg); tt.textContent = 'Daily 15′'; tt.style.fill = '#0F766E';
+      });
+      const ev = (i, y, w, label, color, bg) => { svgEl('rect', {x:f.m.l+cw*i+8, y:f.m.t+y, width:cw*w-16, height:34, rx:6, fill:bg, stroke:color, class:'gpop'}, f.svg); const t = svgEl('text', {x:f.m.l+cw*i+cw*w/2, y:f.m.t+y+22, 'text-anchor':'middle', 'font-weight':900}, f.svg); t.textContent = label; t.style.fill = color; };
+      ev(0, 18, 1, 'Planning ≤ 4 h', '#B45309', '#FEF3C7');
+      ev(9, 118, 1, 'Review', '#2F6FE4', '#E8F0FE');
+      ev(9, 18, 1, 'Retro', '#7C3AED', '#F1E9FF');
+      ev(1, 118, 8, 'Refinamiento continuo · ≈ 10 % de la capacidad', '#667085', '#fff');
+    },
+    sizes: el => {
+      const data = [['RF-1.01','Registro',2],['RF-1.02','Inicio de sesión',3],['RF-1.03','Cierre de sesión',1],['RF-1.04','Recuperar contraseña',3],['RF-1.05','Contraseñas cifradas',1,1],['RF-1.06','Validar registro',1],
+        ['RF-1.07','Ver mi perfil',1],['RF-1.08','Editar mi perfil',1],['RF-1.09','Listar y buscar',2],['RF-1.10','Crear/editar (admin)',2],['RF-1.11','Activar / inactivar',2],['RF-1.12','Estados de cuenta',1,1],
+        ['RF-1.13','Roles + MERCHANT',2],['RF-1.14','Restricción por rol',3],['RF-1.15','Sesión activa',3],['RF-1.16','Registro de seguridad',2,1],['RF-1.17','Bloqueo por intentos',2,1],['RF-1.18','Confirmar correo',3,1],
+        ['RF-1.19','UserService',2],['RF-1.20','Validar usuario',1],['RF-1.21','Datos básicos',1],['RF-1.22','Documentar contrato',1,1],['RF-1.23','Usuarios de prueba',0]];
+      const col = ['#1F4FD8','#0F766E','#7C3AED','#B45309'], lab = ['XS','S','M','L'];
+      el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px">' + data.map(d => `<div class="gpop" style="border-radius:10px;padding:9px 10px;background:${d[3]?'#fff':col[d[2]]};color:${d[3]?col[d[2]]:'#fff'};border:2px ${d[3]?'dashed':'solid'} ${col[d[2]]};min-height:76px"><div style="display:flex;justify-content:space-between;font:600 12px var(--f-mono)"><span>${d[0]}</span><b>${lab[d[2]]}</b></div><div style="font-weight:900;font-size:15px;margin-top:6px;line-height:1.2">${d[1]}</div></div>`).join('') + '</div>';
+    }
+  };
+  ['sig1','sig2','sig3','sig4'].forEach((k, i) => {
+    const vals = [[24,24,24,24,23,23,23,22,22,12,0],[24,22,19,17,15,21,18,14,9,5,2],[24,19,14,9,5,2,0,0,0,0,0],[24,23,22,22,21,21,20,20,19,19,18]][i];
+    CHARTS[k] = el => lines(el, {labels:vals.map((_,j)=>j), noX:true, yMax:24, ticks:[0,24], m:{l:28,b:10,t:8}, series:[{color:'#98A2B3', values:vals.map((_,j)=>24-2.4*j), dash:'6 5', w:2},{color:'#2F6FE4', values:vals, w:3}]});
+  });
+  function drawMini(el){ const vals = el.dataset.mini.split(',').map(Number); lines(el, {labels:vals.map((_,j)=>j), noX:true, yMax:24, ticks:[0,24], m:{l:24,b:6,t:8,r:6}, series:[{color:'#C9A86A', values:vals.map((_,j)=>24-2.4*j), dash:'6 5', w:2},{color:'#1F4FD8', values:vals, w:3}]}); }
+
+  /* Gantt */
+  function buildGantt(){
+    const g = document.getElementById('gantt'); if (!g || g.dataset.done) return; g.dataset.done = 1;
+    const weeks = ['28 sep','5 oct','12 oct','19 oct','26 oct','2 nov','9 nov','16 nov','23 nov','30 nov'];
+    let h = '<div class="h" style="text-align:left">Elemento · SP</div>' + weeks.map((w,i)=>`<div class="h">S${i+1}<small>${w}</small></div>`).join('');
+    const rows = [
+      ['Base CRUD + v0.1.0', 'hecho', 1, 2, '#98A2B3'],
+      ['MERCHANT · UserService · prueba', 'RF-1.13/19/20/21/23 · 16', 3, 2, '#2F6FE4'],
+      ['Validación y registro', 'RF-1.06 · RF-1.01 · 8', 3.5, 1.5, '#2F6FE4'],
+      ['Sesión: inicio, cierre, activa', 'RF-1.02/03/15 · 18', 5, 2, '#0F766E'],
+      ['Perfil e inactivación', 'RF-1.07/08/11 · 8', 5.5, 1.5, '#0F766E'],
+      ['Permisos y administración', 'RF-1.14/09/10 · 18', 7, 2, '#7C3AED'],
+      ['Recuperar contraseña', 'RF-1.04 · 8', 7.5, 1.5, '#7C3AED'],
+      ['Opcionales y documentación', 'RF-1.05/12/16/17/22 · 18', 9, 1, '#B45309'],
+      ['Demo del sistema integrado', 'semana 10', 10, 1, '#15803D']
+    ];
+    rows.forEach(r => {
+      h += `<div class="lab">${r[0]}<small>${r[1]}</small></div><div class="track" style="height:40px"><div class="bar gbar2" style="left:${(r[2]-1)*10}%;width:calc(${r[3]*10}% - 4px);background:${r[4]}">${r[3]>=1.5? r[1].split(' · ').pop() + (/\d$/.test(r[1])?' SP':''):''}</div></div>`;
+    });
+    h += '<div class="lab">Tags</div><div class="track" style="height:36px">' + [[2,'v0.1.0'],[4,'v0.2.0'],[6,'v0.3.0'],[8,'v0.4.0'],[9,'v1.0.0']].map(t=>`<div class="ms" style="left:${t[0]*10}%" title="${t[1]}"></div><div style="position:absolute;left:calc(${t[0]*10}% + 12px);top:9px;font:600 12px var(--f-mono)">${t[1]}</div>`).join('') + '<div class="now" style="left:25%"></div></div>';
+    g.innerHTML = h;
+  }
+
+  /* Waffle de 36 factores */
+  function buildWaffle(){
+    const w = document.getElementById('waffle'); if (!w || w.dataset.done) return; w.dataset.done = 1;
+    const dims = [['#1F4FD8',6],['#0F766E',7],['#B45309',7],['#7C3AED',8],['#BE123C',8]]; let n = 1, h = '';
+    dims.forEach(([c,k]) => { for (let i=0;i<k;i++) h += `<span class="gpop" style="background:${c}">${n++}</span>`; });
+    w.innerHTML = h;
+  }
+
+  /* Matrices de la tesis */
+  function buildMatrix(id, rows){
+    const el = document.getElementById(id); if (!el || el.dataset.done) return; el.dataset.done = 1;
+    const cols = ['Scrum Master','Product Owner','Dev Team','Otros'];
+    el.innerHTML = '<table class="t"><tr><th>Entrevistado</th>' + cols.map(c=>`<th style="text-align:center">${c}</th>`).join('') + '</tr>' + rows.map(r => `<tr><td><b>${r[0]}</b></td>` + r[1].map(v => `<td style="text-align:center">${v?'<span class="gpop" style="display:inline-block;width:22px;height:22px;border-radius:50%;background:#2F6FE4"></span>':'<span style="color:#C9D1DE">·</span>'}</td>`).join('') + '</tr>').join('') + '</table>';
+  }
+
+  /* Kanban animado */
+  const KCARDS = [
+    ['HU-13a MERCHANT','2 SP · Ana', '#2F6FE4', [2,3,4]],
+    ['HU-20 Validar usuario','3 SP · Luis', '#2F6FE4', [1,2,3]],
+    ['HU-21 Datos básicos','2 SP · Sara', '#0F766E', [1,1,2]],
+    ['HU-23 Usuarios de prueba','1 SP · Ana', '#0F766E', [3,4,4]],
+    ['HU-06 Validación','3 SP · Tomás', '#7C3AED', [0,1,2]],
+    ['HU-01 Registro','5 SP', '#7C3AED', [0,0,1]],
+    ['Mock CatalogService','Equipo B · 2 SP', '#B45309', [0,1,1]]
+  ];
+  let kStage = 0;
+  function renderKanban(stage, animate){
+    const k = document.getElementById('kanban'); if (!k) return;
+    const cols = k.querySelectorAll('.kcol');
+    const first = {};
+    if (animate && G && !reduce) k.querySelectorAll('.kcard').forEach(c => first[c.dataset.id] = c.getBoundingClientRect());
+    cols.forEach(c => c.querySelectorAll('.kcard').forEach(x => x.remove()));
+    KCARDS.forEach((c, i) => {
+      const d = document.createElement('div'); d.className = 'kcard'; d.dataset.id = i; d.style.setProperty('--c', c[2]);
+      d.innerHTML = `${c[0]}<small>${c[1]}</small>`; cols[c[3][Math.min(stage, 2)]].appendChild(d);
+    });
+    if (animate && G && !reduce) {
+      const sc = canvas.getBoundingClientRect().width / 1280;
+      k.querySelectorAll('.kcard').forEach(c => { const f = first[c.dataset.id]; if (!f) return; const l = c.getBoundingClientRect();
+        const dx = (f.left - l.left) / sc, dy = (f.top - l.top) / sc; if (dx || dy) G.fromTo(c, {x:dx, y:dy}, {x:0, y:0, duration:.6, ease:'power2.inOut'}); });
+    }
+  }
+
+  /* Calculadora de capacidad */
+  function calc(){
+    const v = id => parseFloat(document.getElementById(id).value) || 0;
+    const h = v('cPeople') * v('cDays') * v('cHours'); const r = h * 0.9; const sp = v('cSp') ? r / v('cSp') : 0;
+    document.getElementById('cOutH').textContent = Math.round(h);
+    document.getElementById('cOutR').textContent = Math.round(r);
+    document.getElementById('cOutSp').textContent = Math.round(sp);
+  }
+  ['cPeople','cDays','cHours','cSp'].forEach(id => { const e = document.getElementById(id); e.addEventListener('input', calc); e.addEventListener('keydown', ev => ev.stopPropagation()); });
+
+  /* QR y URL de la web */
+  function buildQR(){
+    document.querySelectorAll('[data-appurl]').forEach(e => e.textContent = APP_URL);
+    document.querySelectorAll('[data-qr]').forEach(e => { if (e.dataset.done || !window.QRCode) return; e.dataset.done = 1;
+      try { new QRCode(e, {text: /^https?:/.test(APP_URL) ? APP_URL : location.href, width:150, height:150, colorDark:'#12285A', colorLight:'#ffffff'}); } catch(err){} });
+  }
+
+  /* ---------- Navegación ---------- */
+  let cur = 0, step = 0;
+  const maxStep = s => { let m = 0; s.querySelectorAll('[data-step]').forEach(e => m = Math.max(m, +e.dataset.step)); if (s.querySelector('#kanban')) m = Math.max(m, 2); return m; };
+  function applySteps(s){
+    s.querySelectorAll('[data-step]').forEach(e => e.classList.toggle('on', +e.dataset.step <= step));
+    if (s.querySelector('#kanban')) { if (step !== kStage) { kStage = step; renderKanban(step, true); } }
+  }
+  function drawCharts(s){
+    s.querySelectorAll('[data-chart]').forEach(el => { const fn = CHARTS[el.dataset.chart]; if (fn) fn(el); });
+    s.querySelectorAll('[data-mini]').forEach(drawMini);
+    if (s.querySelector('#gantt')) buildGantt();
+    if (s.querySelector('#waffle')) buildWaffle();
+    if (s.querySelector('#m1')) { buildMatrix('m1', [['Scrum Master',[0,1,1,0]],['Product Owner',[1,1,1,1]],['Developer',[0,0,1,0]]]); buildMatrix('m2', [['Scrum Master',[0,1,1,0]],['Product Owner',[0,0,1,0]],['Developer',[0,0,1,0]]]); }
+    if (s.querySelector('#kanban')) { kStage = step; renderKanban(step, false); }
+    if (s.querySelector('[data-qr]')) buildQR();
+    if (s.querySelector('#cPeople')) calc();
+  }
+  function animateIn(s){
+    if (!G || reduce) return;
+    const items = s.querySelectorAll('.anim');
+    G.fromTo(items, {opacity:0, y:18}, {opacity:1, y:0, duration:.55, stagger:.07, ease:'power3.out', clearProps:'transform'});
+    s.querySelectorAll('.draw path, .draw circle, path.draw, circle.draw').forEach(p => { try { const L = p.getTotalLength(); G.fromTo(p, {strokeDasharray:L, strokeDashoffset:L}, {strokeDashoffset:0, duration:1.1, delay:.25, ease:'power2.inOut', onComplete:()=>{ p.style.strokeDasharray = ''; }}); } catch(e){} });
+    s.querySelectorAll('.gbar').forEach((b,i) => { const h = +b.dataset.h, y = +b.getAttribute('y'); G.fromTo(b, {attr:{y:y+h, height:0}}, {attr:{y, height:h}, duration:.7, delay:.15 + i*.025, ease:'power2.out'}); });
+    s.querySelectorAll('.gbar2').forEach((b,i) => G.fromTo(b, {scaleX:0}, {scaleX:1, duration:.7, delay:.2 + i*.08, ease:'power3.out'}));
+    s.querySelectorAll('.gline').forEach(p => { const L = p.getTotalLength(); G.fromTo(p, {strokeDasharray:L, strokeDashoffset:L}, {strokeDashoffset:0, duration:1.4, delay:.2, ease:'power1.inOut', onComplete:()=>{ p.style.strokeDasharray = ''; }}); });
+    s.querySelectorAll('.gdot,.gpop').forEach((d,i) => G.fromTo(d, {opacity:0}, {opacity:1, duration:.3, delay:.3 + i*.025}));
+    s.querySelectorAll('.gprog').forEach(b => G.fromTo(b, {attr:{width:0}}, {attr:{width:+b.dataset.w}, duration:1.2, delay:.2, ease:'power2.out'}));
+    s.querySelectorAll('[data-count]').forEach(el => { const end = +el.dataset.count; const o = {v:0}; G.to(o, {v:end, duration:1.1, delay:.2, ease:'power2.out', onUpdate:()=> el.textContent = Math.round(o.v)}); });
+    if (s.classList.contains('divider')) G.fromTo(s.querySelector('.num'), {x:-60, opacity:0}, {x:0, opacity:1, duration:.9, ease:'power3.out'});
+    if (s.classList.contains('cover')) G.fromTo(s.querySelectorAll('.pbi'), {x:80, opacity:0}, {x:0, opacity:(i,t)=>t.style.opacity||1, duration:.6, stagger:.09, delay:.3, ease:'back.out(1.6)'});
+    if (s.querySelector('#fibcards')) G.fromTo('#fibcards span', {rotateY:90, opacity:0}, {rotateY:0, opacity:1, duration:.5, stagger:.06, delay:.3});
+  }
+  function show(i, st, dir){
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    const prev = slides[cur], next = slides[i];
+    if (i !== cur || !next.classList.contains('active')) {
+      if (prev && prev !== next) {
+        if (G && !reduce) G.to(prev, {opacity:0, x: dir < 0 ? 60 : -60, duration:.28, ease:'power2.in', onComplete:()=>{ prev.classList.remove('active'); G.set(prev, {clearProps:'opacity,transform'}); }});
+        else prev.classList.remove('active');
+      }
+      cur = i; step = st || 0;
+      const enter = () => { next.classList.add('active'); drawCharts(next); applySteps(next);
+        if (G && !reduce) G.fromTo(next, {opacity:0, x: dir < 0 ? -60 : 60, scale:.985}, {opacity:1, x:0, scale:1, duration:.45, ease:'power3.out', clearProps:'transform,opacity'});
+        animateIn(next); };
+      if (G && !reduce && prev && prev !== next) setTimeout(enter, 260); else enter();
+    } else { step = st || 0; applySteps(next); }
+    update();
+  }
+  function nextStep(){ const s = slides[cur]; if (step < maxStep(s)) { step++; applySteps(s); update(); } else if (cur < slides.length - 1) show(cur + 1, 0, 1); }
+  function prevStep(){ const s = slides[cur]; if (step > 0) { step--; applySteps(s); update(); } else if (cur > 0) show(cur - 1, maxStep(slides[cur-1]), -1); }
+  const notesOf = s => { const n = s.querySelector('.notes'); return n ? n.textContent.trim() : ''; };
+  let chan = null; try { chan = new BroadcastChannel('ds2-slides'); } catch(e){}
+  let fromChan = false;
+  function update(){
+    document.getElementById('progress').style.width = ((cur + 1) / slides.length * 100) + '%';
+    document.getElementById('notesText').innerHTML = esc(notesOf(slides[cur])).replace(/\n/g, '<br>');
+    try { history.replaceState(null, '', (isPresenter ? '#presenter' : '#' + (cur + 1))); } catch(e){}
+    if (isPresenter) {
+      document.getElementById('pvNotes').textContent = notesOf(slides[cur]);
+      document.getElementById('pvNext').textContent = slides[cur+1] ? slides[cur+1].dataset.title : '—';
+      const ms = maxStep(slides[cur]);
+      document.getElementById('pvPos').textContent = `Diapositiva ${cur+1} de ${slides.length} · ${slides[cur].dataset.title}${ms ? ` · paso ${step}/${ms}` : ''}`;
+    }
+    if (chan && !fromChan) chan.postMessage({cur, step});
+  }
+  if (chan) chan.onmessage = ev => { fromChan = true; const d = ev.data; if (d.cur !== cur) show(d.cur, d.step, d.cur > cur ? 1 : -1); else { step = d.step; applySteps(slides[cur]); update(); } fromChan = false; };
+
+  /* Escalado */
+  function fit(){
+    const deck = document.getElementById('deck').getBoundingClientRect();
+    const sc = Math.min(deck.width / 1280, deck.height / 720) * 0.98;
+    canvas.style.transform = `scale(${sc})`;
+  }
+  window.addEventListener('resize', fit);
+
+  /* Índice */
+  function buildMenu(){
+    let h = '', open = false;
+    slides.forEach((s, i) => {
+      if (i === 0 || s.classList.contains('divider') || (s.classList.contains('cover') && i > 0)) { if (open) h += '</ol>'; h += `<h3>${esc(s.dataset.title)}</h3><ol start="${i+1}">`; open = true; }
+      h += `<li><a href="#${i+1}" data-go="${i}">${esc(s.dataset.title || 'Diapositiva')}</a></li>`;
+    });
+    document.getElementById('menuList').innerHTML = h + '</ol>';
+    document.getElementById('menuList').addEventListener('click', e => { const a = e.target.closest('[data-go]'); if (!a) return; e.preventDefault(); toggleMenu(false); show(+a.dataset.go, 0, 1); });
+  }
+  function toggleMenu(on){ document.getElementById('menu').classList.toggle('on', on); }
+
+  /* Teclado y controles */
+  document.addEventListener('keydown', e => {
+    if (e.target.matches('input')) return;
+    const k = e.key;
+    if (['ArrowRight','PageDown',' ','Enter'].includes(k)) { e.preventDefault(); nextStep(); }
+    else if (['ArrowLeft','PageUp','Backspace'].includes(k)) { e.preventDefault(); prevStep(); }
+    else if (k === 'Home') show(0, 0, -1);
+    else if (k === 'End') show(slides.length - 1, 0, 1);
+    else if (k === 'n' || k === 'N') document.getElementById('notesPanel').classList.toggle('on');
+    else if (k === 'm' || k === 'M') toggleMenu(!document.getElementById('menu').classList.contains('on'));
+    else if (k === 'Escape') toggleMenu(false);
+    else if (k === 'p' || k === 'P') openPresenter();
+    else if (k === 'f' || k === 'F') full();
+  });
+  let tx = null; document.addEventListener('touchstart', e => tx = e.touches[0].clientX, {passive:true});
+  document.addEventListener('touchend', e => { if (tx == null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) (dx < 0 ? nextStep : prevStep)(); tx = null; });
+  document.getElementById('bNext').onclick = nextStep;
+  document.getElementById('bPrev').onclick = prevStep;
+  document.getElementById('bMenu').onclick = () => toggleMenu(true);
+  document.getElementById('menu').addEventListener('click', e => { if (e.target.id === 'menu') toggleMenu(false); });
+  document.getElementById('bNotes').onclick = () => document.getElementById('notesPanel').classList.toggle('on');
+  document.getElementById('bPres').onclick = openPresenter;
+  document.getElementById('bFull').onclick = full;
+  function full(){ try { if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{}); else document.exitFullscreen(); } catch(e){} }
+  function openPresenter(){
+    let w = null; try { w = window.open(location.pathname + '#presenter', 'ds2-presenter', 'width=1300,height=760'); } catch(e){}
+    if (!w) { isPresenter = !isPresenter; document.body.classList.toggle('presenter', isPresenter); fit(); update(); }
+  }
+
+  /* Reloj del presentador */
+  let isPresenter = location.hash === '#presenter';
+  let t0 = Date.now();
+  if (isPresenter) document.body.classList.add('presenter');
+  document.getElementById('pvReset').onclick = () => t0 = Date.now();
+  setInterval(() => { if (!isPresenter) return; const s = Math.floor((Date.now() - t0) / 1000); document.getElementById('pvClock').textContent = String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0'); }, 1000);
+
+  let mt = null; document.addEventListener('mousemove', () => { document.body.classList.add('mouse'); clearTimeout(mt); mt = setTimeout(() => document.body.classList.remove('mouse'), 2200); });
+  buildMenu(); fit();
+  const start = parseInt(location.hash.replace('#',''), 10);
+  cur = 0; show(isNaN(start) ? 0 : start - 1, 0, 1);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawCharts(slides[cur]));
+})();
+</script>
+</body>
+</html>
