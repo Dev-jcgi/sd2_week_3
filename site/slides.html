@@ -1671,9 +1671,11 @@ Para el capstone: decidimos aquí y ahora quién la define (todo el curso) y qui
 
   /* QR y URL de la web */
   function buildQR(){
-    document.querySelectorAll('[data-appurl]').forEach(e => e.textContent = APP_URL);
-    document.querySelectorAll('[data-qr]').forEach(e => { if (e.dataset.done || !window.QRCode) return; e.dataset.done = 1;
-      try { new QRCode(e, {text: /^https?:/.test(APP_URL) ? APP_URL : location.href, width:150, height:150, colorDark:'#12285A', colorLight:'#ffffff'}); } catch(err){} });
+    const online = /^https?:/.test(APP_URL) && !/localhost|127\.0\.0\.1/.test(APP_URL);
+    document.querySelectorAll('[data-appurl]').forEach(e => e.textContent = online ? APP_URL : 'La URL de GitHub Pages de la web');
+    document.querySelectorAll('[data-qr]').forEach(e => { if (e.dataset.done) return; e.dataset.done = 1;
+      if (!online || !window.QRCode) { e.innerHTML = '<span style="font:600 13px var(--f-mono);color:var(--muted);text-align:center">El QR aparece al abrir la presentación desde GitHub Pages</span>'; return; }
+      try { new QRCode(e, {text: APP_URL, width:150, height:150, colorDark:'#12285A', colorLight:'#ffffff'}); } catch(err){} });
   }
 
   /* ---------- Navegación ---------- */
